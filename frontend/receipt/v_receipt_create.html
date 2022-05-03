@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #262626;
+        text-align: left;
+        padding: 8px;
+    }
+</style>
+    <div class="container">
+        <a href="../index.html">กลับ</a>
+        <h2>สร้างบิล</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <label>รหัสบิล</label><br>
+                <input type="text" id="code" value="BILLXXXXXXX" disabled>
+            </div>
+        </div>
+        <label>วันที่</label><br>
+        <input type="date" id="date" style="width:195px;" disabled>
+        <button style="float: right;" onclick="add_table()">เพิ่ม</button>
+        <br><br>
+        <table>
+            <thead>
+                <tr>
+                    <th width="5%">No.</th>
+                    <th width="15%">รหัสสินค้า</th>
+                    <th width="15%">ชื่อสินค้า</th>
+                    <th width="5%">หน่วย</th>
+                    <th width="5%">จำนวน</th>
+                    <th width="15%">ราคา</th>
+                    <th width="10%">ส่วนลด (%)</th>
+                    <th width="10%">ส่วนลด (บาท)</th>
+                    <th width="20%">รวมเงิน</th>
+                    <th width="5%">ลบ</th>
+
+                </tr>
+            </thead>
+            <tbody id="tbody">
+
+
+            </tbody>
+        </table>
+        <br><br>
+        <div style="float: right;">
+            <div class="row">
+                <div class="col-md-6">
+                    <label>ยอดรวมสินค้า</label> 
+                    <input type="text" id="product_price" disabled>  
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label>ยอดรวมส่วนลดสินค้า</label> 
+                    <input type="text" id="product_discount" disabled>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label>ส่วนลดท้ายบิล</label> 
+                    <input type="number" id="last_discount" onchange="CalculateTotalPrice()">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label>ราคารวมสุทธิ</label> 
+                    <input type="text" id="total_price" disabled>
+                </div>
+            </div>
+            <br>
+            <button>บันทึก</button>
+            <br><br><br>
+        </div>
+        <br><br><br><br><br><br><br><br>
+    </div>
+    <br><br>
+    <script>
+        (function() 
+        {
+            document.getElementById('date').valueAsDate = new Date();;
+            GetAllItem()
+        })();
+
+        document.getElementById('date').valueAsDate = new Date(); // set current data
+        let x = 0; //count add table
+        let data_item; // data item[]
+        
+
+        // add table
+        function add_table(){
+            document.querySelector('#tbody').insertAdjacentHTML("beforeend",
+                `<tr id="row${x+1}">
+                    <td>
+                        <p>${x+1}</p>
+                    </td>
+                    <td>
+                        <select id="select${x+1}" data-columns="${x+1}" onchange="SetName(this)"></select>
+                    </td>
+                    <td>
+                        <p id="name${x+1}"></p>
+                    </td>
+                    <td>
+                        <p id="unit${x+1}"></p>
+                    </td>
+                    <td>
+                        <input type="number" id="qty${x+1}" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" name="count" size="10">
+                    </td>
+                    <td>
+                        <p id="price${x+1}"></p>
+                    </td>
+                    <td>
+                        <input type="number" id="discount_percent${x+1}" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" size="10">
+                    </td>
+                    <td>
+                        <input type="number" id="discount_bath${x+1}" name="all_discount" size="10" disabled>
+                    </td>
+                    <td>
+                        <p id="total${x+1}" name="all_total"></p>
+                    </td>
+                    <td>
+                    <button id="delete${x+1}" class="remove" onclick="delete_table(this)">ลบ</button>
+                    </td>
+                </tr>`
+            );
+            SetSelect(x+1);
+            x++
+        }
+
+        // delete table
+        function delete_table(dom){
+            
+            let count = dom.id.substring(6);
+            document.getElementById("row"+count).remove();
+            for(i=count; i<x; i++){
+                let num = Number(i)+1;
+                let id_row = document.getElementById("row"+num);
+                let id_delete = id_row.querySelector("button");
+                let id_select = id_row.querySelector("select");
+                let id_name = document.getElementById("name"+num);
+                let id_price = document.getElementById("price"+num);
+                let id_unit = document.getElementById("unit"+num);
+                let id_qty = document.getElementById("qty"+num);
+                let id_discount_percent = document.getElementById("discount_percent"+num);
+                let id_discount_bath = document.getElementById("discount_bath"+num);
+                let id_total = document.getElementById("total"+num);
+
+                id_row.querySelector("p").innerText = num-1;
+                id_row.id = `row${num-1}`;
+                id_delete.id = `delete${num-1}`;
+                id_select.id = `select${num-1}`;
+                id_name.id = `name${num-1}`;
+                id_price.id = `price${num-1}`;
+                id_unit.id = `unit${num-1}`;
+                id_qty.id = `qty${num-1}`;
+                id_discount_percent.id = `discount_percent${num-1}`;
+                id_discount_bath.id = `discount_bath${num-1}`;
+                id_total.id = `total${num-1}`;
+
+            }
+            x=x-1;
+            CalculateProductPrice();
+            CalculateProductDiscount();
+            CalculateTotalPrice();
+        }
+
+        function SetSelect(index){
+
+            let selectList = document.getElementById("select"+index);
+            
+            let option = document.createElement("option");
+            selectList.appendChild(option);
+
+            for (i = 0; i < data_item.length; i++) {
+                option = document.createElement("option");
+                option.setAttribute("value", data_item[i]['item_id']);
+                option.text = data_item[i]['item_code'];
+                selectList.appendChild(option);
+            }
+        }
+
+        function SetName(dom){
+            let index = dom.id.substring(6);
+            console.log(index)
+
+            let x = document.getElementById("select"+index).value;
+            for(i=0;i<data_item.length;i++){
+                if(data_item[i]['item_id'] == x){
+                    document.getElementById("name"+index).innerHTML = data_item[i]['item_name'];
+                    document.getElementById("price"+index).innerHTML = data_item[i]['item_price'];
+                    document.getElementById("unit"+index).innerHTML = data_item[i]['unit_name'];
+
+                }
+            }
+            CalculateListTotal(index)
+        }
+
+        // get all item
+        async function GetAllItem()
+        {
+            const result = await axios.get('http://localhost:5252/Item/GetAll',);
+            const data = result.data;
+            data_item = data;
+        }
+
+        function CalculateListTotal(index)
+        {
+            CalculateDiscount(index);
+            let qty = document.getElementById("qty"+index).value;
+            let price = document.getElementById("price"+index).innerText;
+            let discount_bath = document.getElementById("discount_bath"+index).value;
+            let total = (qty * price) - discount_bath;
+            if(total < 0){
+                document.getElementById("total"+index).innerHTML = '0.00';
+            }else{
+                document.getElementById("total"+index).innerHTML = total.toFixed(2);
+            }
+            CalculateProductPrice();
+            CalculateProductDiscount();
+            CalculateTotalPrice();
+        }
+
+        function CalculateDiscount(index){
+            let qty = document.getElementById("qty"+index).value;
+            let price = document.getElementById("price"+index).innerText;
+            let discount = document.getElementById("discount_percent"+index).value;
+            let total = (qty * price)
+            let discount_bath = (total * discount)/100
+            if(discount_bath > total){
+                discount_bath = total;
+            }
+            document.getElementById("discount_bath"+index).value = discount_bath.toFixed(2);
+        }
+
+        function CalculateProductPrice(){
+
+            let array_total = document.getElementsByName("all_total");
+            let total = 0;
+            for(i=0; i<array_total.length;i++){
+                total += Number(array_total[i].innerHTML)
+            }
+            document.getElementById("product_price").value = total.toFixed(2);
+        }
+
+        function CalculateProductDiscount()
+        {
+            let array_discount = document.getElementsByName("all_discount");
+            let total = 0;
+            for(i=0; i<array_discount.length;i++){
+                total += Number(array_discount[i].value)
+            }
+            document.getElementById("product_discount").value = total.toFixed(2);
+        }
+
+        function CalculateTotalPrice()
+        {
+            let total = document.getElementById("product_price").value;
+            let last_discount = document.getElementById("last_discount").value;
+            let total_price = total - last_discount;
+            if(total_price < 0){
+                document.getElementById("total_price").value = '0.00';
+            }else{
+                document.getElementById("total_price").value = total_price.toFixed(2);
+            }
+
+        }
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    </body>
+</html>
+

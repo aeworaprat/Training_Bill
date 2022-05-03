@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #262626;
+        text-align: left;
+        padding: 8px;
+    }
+</style>
+    <div class="container">
+        <a href="../index.html">กลับ</a>
+        <h2>จัดการหน่วย</h2>
+        <button type="button" style="float: right;" data-toggle="modal" data-target="#add" onclick='OpenModal()'>เพิ่ม</button>
+        <br><br>
+        <div id="create_table">
+
+        </div>
+    </div>
+    <div class="modal fade" id="add" tabindex="-1" aria-labelledby="exampleModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">เพิ่มหน่วย</h5>
+                    <button type="button" class="close" aria-label="Close"  onclick="CloseModal()">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                <label>ชื่อหน่วย</label><br>
+                <input type="text" name="unit_add" id="unit_add">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="CloseModal()">ยกเลิก</button>
+                    <button type="button" onclick="InsertUnti()">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="update" tabindex="-1" aria-labelledby="exampleModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">แก้ไขหน่วย</h5>
+                    <button type="button" class="close" aria-label="Close"  onclick="CloseModalEdit()">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                <input type="hidden" name="unit_id" id="unit_id" >
+                <label>ชื่อหน่วย</label><br>
+                <input type="text" name="unit_edit" id="unit_edit">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="CloseModalEdit()">ยกเลิก</button>
+                    <button type="button" onclick="UpdateUnit()">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" id="backdrop"  style="display: none;"></div>
+
+<script>
+    (function() 
+    {
+        GetAllUnit();
+
+    })();
+    
+    // get data unit
+    async function GetAllUnit()
+    {
+        let result = await axios.get('http://localhost:5252/Unit/GetAll',);
+        let data = result.data;
+        CreateTable(data);
+    }
+
+    // createtable
+    function CreateTable(data)
+    {
+        let html_code = '';
+        html_code += "<table>";
+        html_code += "<tr>";
+        html_code += "<th width='10%'>No.</th>";
+        html_code += "<th>ชื่อ</th>";
+        html_code += "<th style='text-align:center' width='20%'>ดำเนินการ</th>"
+        html_code += "</tr>";
+        data.forEach((row, index) => {
+        html_code += "<tr>";
+            html_code += "<td>"+(index+1)+"</td>";
+            html_code += "<td>"+row['unit_name']+"</td>";
+            html_code += "<td style='text-align:center'>";
+            html_code += "<button data-toggle='modal' data-target='#add' onclick='OpenModalEdit("+`${row['unit_id']},"${row['unit_name']}"`+")'>แก้ไข</button> ";
+            html_code += "<button onclick='DeleteUnit("+`${row['unit_id']},"${row['unit_name']}"`+")'>ลบ</button>";
+            html_code += "</td>";
+        html_code += "</tr>";
+        });
+        html_code += "</table>";
+        document.getElementById("create_table").innerHTML = html_code;
+    }
+
+    // insert unit
+    async function InsertUnti()
+    {
+        let name = document.getElementById("unit_add").value.trim();
+
+        if(name == ''){
+            alert('no value');
+        }else{
+            await axios.post('http://localhost:5252/Unit/InsertUnit', { 
+                unit_name: name 
+            }).then(function (response) {
+                let result = response.data;
+                if(result == false){
+                    alert('บันทึกไม่สำเร็จ');
+                }else{
+                    GetAllUnit();
+                    alert('บันทึกสำเร็จ');
+                    CloseModal();
+                }
+            })
+        }
+    }
+
+     // delete unit
+    async function DeleteUnit(id, name)
+    {
+        await axios.post('http://localhost:5252/Unit/DeleteUnit', {
+            unit_id : id,
+            unit_name: name
+        }).then(function (response) {
+            let result = response.data;
+            if(result == false){
+                alert('ลบไม่สำเร็จ');
+            }else{
+                GetAllUnit();
+                alert('ลบสำเร็จ');
+            }
+        })
+    }
+
+     // update unit
+    async function UpdateUnit()
+    {
+        let name = document.getElementById("unit_edit").value.trim();
+        let id = document.getElementById("unit_id").value;
+        if(name == ''){
+            alert('no value');
+        }else{
+            let result = await axios.post('http://localhost:5252/Unit/UpdateUnit', {
+                unit_id : id,
+                unit_name: name
+            }).then(function (response) {
+                let result = response.data;
+                if(result == false){
+                    alert('อัพเดตไม่สำเร็จ');
+                }else{
+                    GetAllUnit();
+                    alert('อัพเดตสำเร็จ');
+                    CloseModalEdit();
+                }
+            })
+        }
+    }
+
+    // modal add
+    function OpenModal() 
+    {
+        document.getElementById("backdrop").style.display = "block"
+        document.getElementById("add").style.display = "block"
+        document.getElementById("add").classList.add("show")
+    }
+    function CloseModal() 
+    {
+        document.getElementById("backdrop").style.display = "none"
+        document.getElementById("add").style.display = "none"
+        document.getElementById("add").classList.remove("show")
+    }
+
+    let modal = document.getElementById('add');
+
+    window.onclick = function(event) 
+    {
+        if (event.target == modal) {
+            closeModal()
+        }
+    }
+    // modal edit
+    function OpenModalEdit(id, name) 
+    {
+        document.getElementById("unit_edit").value = name; // set update naem
+        document.getElementById("unit_id").value = id; // set update id
+
+        document.getElementById("backdrop").style.display = "block"
+        document.getElementById("update").style.display = "block"
+        document.getElementById("update").classList.add("show");
+    }
+    function CloseModalEdit() 
+    {
+        document.getElementById("backdrop").style.display = "none"
+        document.getElementById("update").style.display = "none"
+        document.getElementById("update").classList.remove("show")
+    }
+
+    let modalEdit = document.getElementById('update');
+
+    window.onclick = function(event) 
+    {
+        if (event.target == modalEdit) {
+            closeModal()
+        }
+    }
+    </script>
+    </body>
+</html>

@@ -747,11 +747,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\Desktop\\test\\bill\\bill\\bill.csproj",
+      "projectUniqueName": "C:\\Users\\User\\Desktop\\bill\\backend\\bill\\bill.csproj",
       "projectName": "bill",
-      "projectPath": "C:\\Users\\User\\Desktop\\test\\bill\\bill\\bill.csproj",
+      "projectPath": "C:\\Users\\User\\Desktop\\bill\\backend\\bill\\bill.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\Desktop\\test\\bill\\bill\\obj\\",
+      "outputPath": "C:\\Users\\User\\Desktop\\bill\\backend\\bill\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
