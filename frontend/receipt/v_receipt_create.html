@@ -81,7 +81,7 @@
                 </div>
             </div>
             <br>
-            <button>บันทึก</button>
+            <button onclick="InsertReceipt()">บันทึก</button>
             <br><br><br>
         </div>
         <br><br><br><br><br><br><br><br>
@@ -107,7 +107,7 @@
                         <p>${x+1}</p>
                     </td>
                     <td>
-                        <select id="select${x+1}" data-columns="${x+1}" onchange="SetName(this)"></select>
+                        <select id="select${x+1}" data-columns="${x+1}" onchange="SetName(this)" name="select"></select>
                     </td>
                     <td>
                         <p id="name${x+1}"></p>
@@ -116,13 +116,13 @@
                         <p id="unit${x+1}"></p>
                     </td>
                     <td>
-                        <input type="number" id="qty${x+1}" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" name="count" size="10">
+                        <input type="number" id="qty${x+1}" name="qty" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" name="count" size="10">
                     </td>
                     <td>
                         <p id="price${x+1}"></p>
                     </td>
                     <td>
-                        <input type="number" id="discount_percent${x+1}" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" size="10">
+                        <input type="number" id="discount_percent${x+1}" name="discount" data-columns="${x+1}" onchange="CalculateListTotal(this.dataset.columns)" size="10">
                     </td>
                     <td>
                         <input type="number" id="discount_bath${x+1}" name="all_discount" size="10" disabled>
@@ -274,7 +274,68 @@
             }else{
                 document.getElementById("total_price").value = total_price.toFixed(2);
             }
+        }
 
+        async function InsertReceipt(){
+
+            let select = document.getElementsByName("select");
+            let qty = document.getElementsByName("qty");
+            let discount = document.getElementsByName("discount");
+            let list_item_id = [];
+            let list_qty = [];
+            let list_discount = [];
+    
+            for(i=0;i<select.length;i++){
+                if(select[i].value != ''){
+                    list_item_id[i] = select[i].value;
+
+                    if(qty[i].value == ''){
+                        list_qty[i] = 0;
+                    }else{
+                        list_qty[i] = qty[i].value;
+                    }
+
+                    if(discount[i].value == ''){
+                        list_discount[i] = 0
+                    }else{
+                        list_discount[i] = discount[i].value
+                    }
+                }
+            }        
+
+            let receipt_product_price = document.getElementById('product_price').value;
+            let receipt_product_discount = document.getElementById('product_discount').value;
+            let receipt_discount = document.getElementById('last_discount').value;
+            let receipt_total_price = document.getElementById('total_price').value;
+
+            if(receipt_discount == ''){
+                receipt_discount = 0;
+            }
+
+            if(list_item_id == ''){
+                alert('no list')
+            }else{
+                await axios.post('http://localhost:5252/Receipt/InsertReceipt', {
+                    receipt_product_price : receipt_product_price,
+                    receipt_product_discount : receipt_product_discount,
+                    receipt_discount : receipt_discount,
+                    receipt_total_price, receipt_total_price,
+                    list : {
+                        list_quantity : list_qty,
+                        list_discount : list_discount,
+                        list_item_id : list_item_id
+                    }
+                    
+                }).then(function (response) {
+                    let result = response.data;
+                    if(result == false){
+                        alert('บันทึกไม่สำเร็จ');
+                    }else{
+                        alert('บันทึกสำเร็จ');
+                        location.reload();
+                    }
+                })
+            }
         }
 
     </script>

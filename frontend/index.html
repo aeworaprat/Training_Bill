@@ -35,7 +35,7 @@
                 </a>
             </div>
             <div class="col-md-3">
-                <a href="" style='color:black'>
+                <a href="receipt/v_receipt_manage.html" style='color:black'>
                     <div class="card">
                             <p style="text-align: center;">ดูบิล</p>
                     </div>
@@ -53,6 +53,32 @@
 
 
     <script>
+        (function() 
+        {
+            GetAllReceipt();
+            
+        })();
+
+        function GetAllReceipt()
+        {
+            const result = await axios.get('http://localhost:5252/Receipt/GetAll',);
+            const data = result.data;
+            CreateTable(data);
+
+
+            
+        }
+
+
+        function CreateTable()
+        {
+
+
+
+
+
+
+        }
 
 
 
