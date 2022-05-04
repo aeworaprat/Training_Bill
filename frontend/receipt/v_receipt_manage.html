@@ -32,8 +32,42 @@
     
     (function() 
     {
-    
+        GetAllReceipt();
+        
     })();
+
+    async function GetAllReceipt()
+    {
+        const result = await axios.get('http://localhost:5252/Receipt/GetAll',);
+        const data = result.data;
+        CreateTable(data);
+    }
+
+    function CreateTable(data)
+    {
+        let html_code = "";
+        html_code += "<table>";
+        html_code += "<tr>";
+        html_code += "<th width='5%'>No.</th>";
+        html_code += "<th width='15%'>รหัสบิล</th>";        
+        html_code += "<th width='15%'>วันที่</th>";
+        html_code += "<th width=>ราคารามสุทธิ</th>";
+        html_code += "<th width='20%' style='text-align:center'>ดำเนินการ</th>";
+        html_code += "</tr>";
+        data.forEach((row, index) => {
+            html_code += "<tr>";
+            html_code += "<td>"+(index+1)+"</td>";
+            html_code += "<td>"+row['receipt_code']+"</td>";
+            html_code += "<td>"+row['receipt_date']+"</td>";
+            html_code += "<td style='text-align: right'>"+row['receipt_total_price']+"</td>";
+            html_code += "<td style='text-align:center'>";
+            html_code += "<button onclick='ViewReceipt("+row['receipt_id']+")'>ดู</button> ";
+            html_code += "</td>";
+            html_code += "</tr>";
+        })
+        html_code += "<table>";
+        document.getElementById("create_table").innerHTML = html_code;
+    }
 
     </script>
     </body>
