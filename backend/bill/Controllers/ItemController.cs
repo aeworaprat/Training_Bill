@@ -43,7 +43,7 @@ namespace bill.Controllers
                 return Ok(false);
             }
             else
-            {
+            {   
                 item item = new item();
                 string code = "ITEM";
                 code += DateTime.Now.ToString("ddMMyyyyhhmmss");
@@ -79,9 +79,21 @@ namespace bill.Controllers
 
         public IActionResult DeleteItem([FromBody] ItemViewModel param)
         {
-            item items = dbContext.items.FirstOrDefault(s => s.item_id == param.item_id);
-            dbContext.items.Remove(items);
-            dbContext.SaveChanges();
+            int count = (from a in dbContext.lists
+                         where a.list_item_id == param.item_id
+                         select a).Count();
+
+            if(count > 0)
+            {
+                return Ok(false);
+
+            }
+            else
+            {
+                item items = dbContext.items.FirstOrDefault(s => s.item_id == param.item_id);
+                dbContext.items.Remove(items);
+                dbContext.SaveChanges();
+            }
             return Ok(true);
         }
 
