@@ -131,7 +131,7 @@
                         <p id="total${x+1}" name="all_total"></p>
                     </td>
                     <td>
-                    <button id="delete${x+1}" class="remove" onclick="delete_table(this)">ลบ</button>
+                    <button id="delete${x+1}" class="remove" data-columns="${x+1}" onclick="delete_table(this)">ลบ</button>
                     </td>
                 </tr>`
             );
@@ -142,7 +142,7 @@
         // delete table
         function delete_table(dom){
             
-            let count = dom.id.substring(6);
+            let count = dom.dataset.columns;
             document.getElementById("row"+count).remove();
             for(i=count; i<x; i++){
                 let num = Number(i)+1;
@@ -192,7 +192,7 @@
         }
 
         function SetName(dom){
-            let index = dom.id.substring(6);
+            let index = dom.dataset.columns;
             console.log(index)
 
             let x = document.getElementById("select"+index).value;
