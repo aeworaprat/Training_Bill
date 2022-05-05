@@ -77,7 +77,13 @@ namespace bill.Context
 
                 entity.Property(e => e.list_discount).HasPrecision(10, 2);
 
+                entity.Property(e => e.list_discount_bath).HasPrecision(10, 2);
+
+                entity.Property(e => e.list_price).HasPrecision(10, 2);
+
                 entity.Property(e => e.list_quantity).HasPrecision(10, 2);
+
+                entity.Property(e => e.list_total_price).HasPrecision(10, 2);
 
                 entity.HasOne(d => d.list_bill)
                     .WithMany(p => p.lists)

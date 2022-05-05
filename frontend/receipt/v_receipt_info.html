@@ -78,11 +78,13 @@
 
         async function GetReceiptById(id){
             const result_receipt = await axios.get(`http://localhost:5252/Receipt/GetReceiptById?id=${id}`);
-            const data_receipt = result_receipt.data;
-            const result_list = await axios.get(`http://localhost:5252/Receipt/GetListById?id=${id}`);
-            const data_list = result_list.data;
-            CreateTable(data_list);
-            SetReseipt(data_receipt);
+            const data_receipt = result_receipt.data
+            if(data_receipt.status_code == -1){
+                alert(data_receipt.message)
+            }else{
+                CreateTable(data_receipt.data);
+                SetReseipt(data_receipt.data);
+            }
         }
 
         function CreateTable(data)
@@ -100,23 +102,17 @@
             html_code += "<th width='10%'>ส่วนลด (บาท)</th>";
             html_code += "<th width='20%'>รวมเงิน</th>";
             html_code += "</tr>";
-            data.forEach((row, index) => {
+            data['receipt_list'].forEach((row, index) => {
                 html_code += "<tr>";
                 html_code += "<td>"+(index+1)+"</td>";
-                html_code += "<td>"+row['item_code']+"</td>";
-                html_code += "<td>"+row['item_name']+"</td>";
-                html_code += "<td>"+row['unit_name']+"</td>";
+                html_code += "<td>"+row['list_item']['item_code']+"</td>";
+                html_code += "<td>"+row['list_item']['item_name']+"</td>";
+                html_code += "<td>"+row['list_item']['item_unit']['unit_name']+"</td>";
                 html_code += "<td>"+row['list_quantity']+"</td>";
-                html_code += "<td>"+row['item_price'].toFixed(2)+"</td>";
+                html_code += "<td>"+row['list_price'].toFixed(2)+"</td>";
                 html_code += "<td>"+row['list_discount']+"</td>";
-                let total = row['item_price'] * row['list_quantity'];
-                let discount_bath = (total * row['list_discount'])/100;
-                if(discount_bath > total){
-                    discount_bath = total;
-                }
-                let total_price = total - discount_bath;
-                html_code += "<td>"+discount_bath.toFixed(2)+"</td>";
-                html_code += "<td>"+total_price.toFixed(2)+"</td>";
+                html_code += "<td>"+row['list_discount_bath']+"</td>";
+                html_code += "<td>"+row['list_total_price']+"</td>";
                 html_code += "</tr>";
             })
             html_code += "<table>";

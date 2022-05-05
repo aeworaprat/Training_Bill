@@ -39,7 +39,7 @@
     async function GetAllReceipt()
     {
         const result = await axios.get('http://localhost:5252/Receipt/GetAll',);
-        const data = result.data;
+        const data = result.data.data;
         CreateTable(data);
     }
 

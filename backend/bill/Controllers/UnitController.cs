@@ -21,7 +21,7 @@ namespace bill.Controllers
         {
             List<unit> units = dbContext.units.OrderBy(x=>x.unit_id).ToList();
 
-            return Ok(units);
+            return Ok(new Result { status_code = 1, message = "success", data = units });
         }
 
         [HttpPost]
@@ -29,7 +29,7 @@ namespace bill.Controllers
         {
             if (dbContext.units.Any(x => x.unit_name == param.unit_name))
             {
-                return Ok(false);
+                return Ok(new Result { status_code = -1, message = "fail"});
             }
             else
             {
@@ -38,7 +38,7 @@ namespace bill.Controllers
                 dbContext.units.Add(unit);
                 dbContext.SaveChanges();
             }
-            return Ok(true);
+            return Ok(new Result { status_code = 1, message = "success" });
         }
 
         [HttpPost]
@@ -49,14 +49,21 @@ namespace bill.Controllers
                          where b.item_unit_id == param.unit_id select a).Count();
             if (count > 0)
             {
-                return Ok(false);
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
-                unit unit = dbContext.units.FirstOrDefault(s => s.unit_id == param.unit_id);
-                dbContext.units.Remove(unit);
-                dbContext.SaveChanges();
-                return Ok(true);
+                unit unit = dbContext.units.SingleOrDefault(s => s.unit_id == param.unit_id);
+                if(unit == null)
+                {
+                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                }
+                else
+                {
+                    dbContext.units.Remove(unit);
+                    dbContext.SaveChanges();
+                    return Ok(new Result { status_code = 1, message = "success" });
+                }
             }
         }
 
@@ -69,7 +76,7 @@ namespace bill.Controllers
 
             if (count > 0)
             {
-                return Ok(false);
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
@@ -77,7 +84,7 @@ namespace bill.Controllers
                 unit.unit_name = param.unit_name;
                 dbContext.SaveChanges();
             }
-            return Ok(true);
+            return Ok(new Result { status_code = 1, message = "success" });
         }
     }
 }

@@ -40,7 +40,7 @@
                 </div>
                 <div class="modal-body">
                 <label>ชื่อหน่วย</label><br>
-                <input type="text" name="unit_add" id="unit_add">
+                <input type="text" name="unit_add" id="unit_add" autocomplete="off">
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="CloseModal()">ยกเลิก</button>
@@ -83,8 +83,8 @@
     // get data unit
     async function GetAllUnit()
     {
-        let result = await axios.get('http://localhost:5252/Unit/GetAll',);
-        let data = result.data;
+        const result = await axios.get('http://localhost:5252/Unit/GetAll',);
+        const data = result.data.data;
         CreateTable(data);
     }
 
@@ -115,7 +115,7 @@
     // insert unit
     async function InsertUnti()
     {
-        let name = document.getElementById("unit_add").value.trim();
+        const name = document.getElementById("unit_add").value.trim();
 
         if(name == ''){
             alert('no value');
@@ -123,8 +123,8 @@
             await axios.post('http://localhost:5252/Unit/InsertUnit', { 
                 unit_name: name 
             }).then(function (response) {
-                let result = response.data;
-                if(result == false){
+                const result = response.data;
+                if(result.status_code == -1){
                     alert('บันทึกไม่สำเร็จ');
                 }else{
                     GetAllUnit();
@@ -142,12 +142,12 @@
             unit_id : id,
             unit_name: name
         }).then(function (response) {
-            let result = response.data;
-            if(result == false){
-                alert('ลบไม่สำเร็จ');
+            const result = response.data;
+            if(result.status_code == -1){
+                alert(result.message);
             }else{
                 GetAllUnit();
-                alert('ลบสำเร็จ');
+                alert(result.message);
             }
         })
     }
@@ -155,21 +155,21 @@
      // update unit
     async function UpdateUnit()
     {
-        let name = document.getElementById("unit_edit").value.trim();
-        let id = document.getElementById("unit_id").value;
+        const name = document.getElementById("unit_edit").value.trim();
+        const id = document.getElementById("unit_id").value;
         if(name == ''){
             alert('no value');
         }else{
-            let result = await axios.post('http://localhost:5252/Unit/UpdateUnit', {
+            await axios.post('http://localhost:5252/Unit/UpdateUnit', {
                 unit_id : id,
                 unit_name: name
             }).then(function (response) {
-                let result = response.data;
-                if(result == false){
-                    alert('อัพเดตไม่สำเร็จ');
+                const result = response.data;
+                if(result.status_code == -1){
+                    alert(result.message);
                 }else{
                     GetAllUnit();
-                    alert('อัพเดตสำเร็จ');
+                    alert(result.message);
                     CloseModalEdit();
                 }
             })

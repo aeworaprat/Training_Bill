@@ -122,7 +122,7 @@
     async function GetAllItem()
     {
         const result = await axios.get('http://localhost:5252/Item/GetAll',);
-        const data = result.data;
+        const data = result.data.data;
         CreateTable(data);
     }
 
@@ -130,7 +130,7 @@
     async function GetUnit()
     {
         const result = await axios.get('http://localhost:5252/Unit/GetAll',);
-        const data = result.data;
+        const data = result.data.data;
         data_unit = data;
     }
 
@@ -151,7 +151,7 @@
             html_code += "<td>"+(index+1)+"</td>";
             html_code += "<td>"+row['item_code']+"</td>";
             html_code += "<td>"+row['item_name']+"</td>";
-            html_code += "<td>"+row['unit_name']+"</td>";
+            html_code += "<td>"+row['item_unit']['unit_name']+"</td>";
             html_code += "<td style='text-align:right'>"+row['item_price']+"</td>";
             html_code += "<td style='text-align:center'>";
             html_code += "<button onclick='OpenModalEdit("+`${row['item_id']}, "${row['item_code']}", "${row['item_name']}", ${row['item_price']}, ${row['item_unit_id']}`+")'>แก้ไข</button> ";
@@ -166,12 +166,12 @@
 
     async function InsertItem()
     {
-        let name = document.getElementById("item_name").value.trim();
-        let price = document.getElementById("item_price").value;
-        let unit_id = document.getElementById("unit").value;
+        const name = document.getElementById("item_name").value.trim();
+        const price = document.getElementById("item_price").value;
+        const unit_id = document.getElementById("unit").value;
 
-        let select = document.getElementById("unit");
-        let unit_name = select.options[select.selectedIndex].text;
+        const select = document.getElementById("unit");
+        const unit_name = select.options[select.selectedIndex].text;
 
         let check = 0;
 
@@ -192,12 +192,12 @@
                 item_code : "test",
                 item_unit_id : Number(unit_id)
             }).then(function (response) {
-                let result = response.data;
-                if(result == false){
-                    alert('บันทึกไม่สำเร็จ');
+                const result = response.data;
+                if(result.status_code == -1){
+                    alert(result.message);
                 }else{
                     GetAllItem();
-                    alert('บันทึกสำเร็จ');
+                    alert(result.message);
                     CloseModal();
                 }
             })
@@ -205,11 +205,11 @@
     }
 
     async function UpdateItem(){
-        let item_id = document.getElementById("item_id").value;
-        let item_code = document.getElementById("item_code_edit").value;
-        let name = document.getElementById("item_name_edit").value.trim();
-        let price = document.getElementById("item_price_edit").value;
-        let unit_id = document.getElementById("unit_edit").value;
+        const item_id = document.getElementById("item_id").value;
+        const item_code = document.getElementById("item_code_edit").value;
+        const name = document.getElementById("item_name_edit").value.trim();
+        const price = document.getElementById("item_price_edit").value;
+        const unit_id = document.getElementById("unit_edit").value;
         const check = 0;
 
         if(name == ''){
@@ -228,12 +228,12 @@
                 item_price : Number(price),
                 item_unit_id : Number(unit_id)
             }).then(function (response) {
-                let result = response.data;
-                if(result == false){
-                    alert('อัพเดตไม่สำเร็จ');
+                const result = response.data;
+                if(result.status_code == -1){
+                    alert(result.message);
                 }else{
                     GetAllItem();
-                    alert('อัพเดตสำเร็จ');
+                    alert(result.message);
                     CloseModalEdit();
                 }
             })
@@ -247,12 +247,12 @@
             item_code : code,
             item_name : name
         }).then(function (response) {
-            let result = response.data;
-            if(result == false){
-                alert('ลบไม่สำเร็จ');
+            const result = response.data;
+            if(result.status_code == -1){
+                alert(result.message);
             }else{
                 GetAllItem();
-                alert('ลบสำเร็จ');
+                alert(result.message);
             }
         })
     }

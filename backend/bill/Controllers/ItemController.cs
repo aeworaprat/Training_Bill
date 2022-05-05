@@ -21,18 +21,22 @@ namespace bill.Controllers
         {
             var items = (from a in dbContext.items
                          join b in dbContext.units on a.item_unit_id equals b.unit_id
-                         select new
+                         orderby a.item_id ascending
+                         select new ItemViewModel
                          {
                              item_id = a.item_id,
                              item_code = a.item_code,
                              item_name = a.item_name,
                              item_price = a.item_price,
                              item_unit_id = a.item_unit_id,
-                             unit_id = b.unit_id,
-                             unit_name = b.unit_name
-                         } into item orderby item.item_id select item).ToList();
+                             item_unit = new UnitViewModel
+                             {
+                               unit_id = b.unit_id,
+                               unit_name = b.unit_name,
+                             }
+                         }).ToList();
 
-            return Ok(items);
+            return Ok(new Result { status_code = 1, message = "success", data = items});
         }
 
         [HttpPost]
@@ -40,23 +44,25 @@ namespace bill.Controllers
         {
             if (dbContext.items.Any(x => x.item_name == param.item_name))
             {
-                return Ok(false);
+                return Ok(new Result { status_code = -1, message = "fail"});
             }
             else
-            {   
-                item item = new item();
-                string code = "ITEM";
-                code += DateTime.Now.ToString("ddMMyyyyhhmmss");
-                item.item_code = code;
-                item.item_name = param.item_name;
-                item.item_price = param.item_price;
-                item.item_unit_id = param.item_unit_id;
-                dbContext.items.Add(item);
+            {
+                item items = new item();
+                items.item_name = param.item_name;
+                items.item_price = param.item_price;
+                items.item_unit_id = param.item_unit_id;
+                dbContext.items.Add(items);
+                dbContext.SaveChanges();
+
+                item items2 = dbContext.items.FirstOrDefault(s => s.item_id == items.item_id);
+                items2.item_code = "ITEM-"+items.item_id.ToString("D4");
                 dbContext.SaveChanges();
             }
-            return Ok(true);
+            return Ok(new Result { status_code = 1, message = "success" });
         }
 
+        [HttpPost]
         public IActionResult UpdateItem([FromBody] ItemViewModel param)
         {
             int count = (from a in dbContext.items
@@ -64,7 +70,7 @@ namespace bill.Controllers
                          select a).Count();
             if(count > 0)
             {
-                return Ok(false);
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
@@ -74,9 +80,10 @@ namespace bill.Controllers
                 items.item_unit_id = param.item_unit_id;
                 dbContext.SaveChanges();
             }
-            return Ok(true);
+            return Ok(new Result { status_code = 1, message = "success" });
         }
 
+        [HttpPost]
         public IActionResult DeleteItem([FromBody] ItemViewModel param)
         {
             int count = (from a in dbContext.lists
@@ -85,8 +92,7 @@ namespace bill.Controllers
 
             if(count > 0)
             {
-                return Ok(false);
-
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
@@ -94,10 +100,7 @@ namespace bill.Controllers
                 dbContext.items.Remove(items);
                 dbContext.SaveChanges();
             }
-            return Ok(true);
+            return Ok(new Result { status_code = 1, message = "success" });
         }
-
-       
-
     }
 }
