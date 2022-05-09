@@ -14,14 +14,30 @@ namespace bill.Controllers
         public ReceiptController(BillDbContext dbContext)
         {
             this.dbContext = dbContext;
+           
         }
 
         [HttpPost]
         public IActionResult InsertReceipt([FromBody] ReceiptViewModel param)
         {
+            int count = (from a in dbContext.receipts orderby a.receipt_id ascending select a).Count();
+            string code = "BILL-";
+            if(count > 0)
+            {
+                string receipt_code = (from a in dbContext.receipts orderby a.receipt_code ascending select a.receipt_code).LastOrDefault();
+                string sub = receipt_code.Substring(5);
+                int last = int.Parse(sub);
+                ++last;
+
+                code += last.ToString("D4");
+            }
+            else
+            {
+                code += "0001";
+            }
+
+
             receipt receipt = new receipt();
-            string code = "BILL";
-            code += DateTime.Now.ToString("ddMMyyyyhhmmss");
             receipt.receipt_code = code;
             receipt.receipt_date = DateOnly.FromDateTime(DateTime.Now);
             receipt.receipt_product_price = param.receipt_product_price;
@@ -29,10 +45,6 @@ namespace bill.Controllers
             receipt.receipt_discount = param.receipt_discount;
             receipt.receipt_total_price = param.receipt_total_price;
             dbContext.receipts.Add(receipt);
-
-            dbContext.SaveChanges();
-            receipt receipt2 = dbContext.receipts.FirstOrDefault(s => s.receipt_id == receipt.receipt_id);
-            receipt2.receipt_code = "BILL-" + receipt.receipt_id.ToString("D4");
             dbContext.SaveChanges();
 
             for (int i = 0; i < param.receipt_list.Length; i++)
@@ -77,58 +89,53 @@ namespace bill.Controllers
                               receipt_product_price = x.receipt_product_price,
                               receipt_product_discount = x.receipt_product_discount,
                               receipt_discount = x.receipt_discount,
-                              receipt_total_price = x.receipt_total_price,
-                              receipt_list = (from a in dbContext.lists
-                                              join b in dbContext.items on a.list_item_id equals b.item_id
-                                              join c in dbContext.units on b.item_unit_id equals c.unit_id
-                                              where a.list_bill_id == id
-                                              select new ListViewModel()
-                                              {
-                                                  list_quantity = a.list_quantity,
-                                                  list_price = a.list_price,
-                                                  list_discount = a.list_discount,
-                                                  list_discount_bath = a.list_discount_bath,
-                                                  list_total_price = a.list_total_price,
-                                                  list_item = new ItemViewModel()
-                                                  {
-                                                      item_code = b.item_code,
-                                                      item_name = b.item_name,
-                                                      item_unit = new UnitViewModel()
-                                                      {
-                                                          unit_name = c.unit_name
-                                                      }
-                                                  }
-                                              }).ToArray()
+                              receipt_total_price = x.receipt_total_price
                           }).FirstOrDefault();
-
             if (result == null)
             {
                 return Ok(new Result { status_code = -1, message = "not found"});
             }
             else
             {
+                var test = (from a in dbContext.lists
+                                       join b in dbContext.items on a.list_item_id equals b.item_id
+                                       join c in dbContext.units on b.item_unit_id equals c.unit_id
+                                       where a.list_bill_id == id
+                                       select new
+                                       {
+                                           list_quantity = a.list_quantity,
+                                           list_price = a.list_price,
+                                           list_discount = a.list_discount,
+                                           list_discount_bath = a.list_discount_bath,
+                                           list_total_price = a.list_total_price,
+                                           item_code = b.item_code,
+                                           item_name = b.item_name,
+                                           unit_name = c.unit_name
+                                       }).ToArray();
+
+                result.receipt_list = new ListViewModel[test.Length];
+                for(int i = 0; i < test.Length; i++)
+                {
+                    result.receipt_list[i] = new ListViewModel
+                    {
+                        list_quantity = test[i].list_quantity,
+                        list_price = test[i].list_price,
+                        list_discount = test[i].list_discount,
+                        list_discount_bath = test[i].list_discount_bath,
+                        list_total_price = test[i].list_total_price,
+                        list_item = new ItemViewModel
+                        {
+                            item_code = test[i].item_code,
+                            item_name = test[i].item_name,
+                            item_unit = new UnitViewModel
+                            {
+                                unit_name = test[i].unit_name
+                            }
+                        }
+                    };
+                }
                 return Ok(new Result { status_code = 1, message = "success", data = result });
             }
         }
-
-        //[HttpGet]
-        //public IActionResult GetListById(int id)
-        //{
-        //    var result = (from a in dbContext.receipts
-        //                  join b in dbContext.lists on a.receipt_id equals b.list_bill_id
-        //                  join c in dbContext.items on b.list_item_id equals c.item_id
-        //                  join d in dbContext.units on c.item_unit_id equals d.unit_id
-        //                  where a.receipt_id == id
-        //                  select new
-        //                  {
-        //                      list_quantity = b.list_quantity,
-        //                      list_discount = b.list_discount,
-        //                      item_code = c.item_code,
-        //                      item_name = c.item_name,
-        //                      item_price = c.item_price,
-        //                      unit_name = d.unit_name
-        //                  }).ToArray();
-        //    return Ok(result);
-        //}
     }
 }

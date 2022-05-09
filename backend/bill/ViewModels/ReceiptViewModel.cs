@@ -10,6 +10,6 @@
         public decimal receipt_discount { get; set; }
         public decimal receipt_total_price { get; set; }
 
-        public ListViewModel[] receipt_list { get; set; }
+        public ListViewModel[]? receipt_list { get; set; }
     }
 }

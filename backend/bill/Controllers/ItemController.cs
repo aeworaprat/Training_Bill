@@ -14,6 +14,37 @@ namespace bill.Controllers
         public ItemController(BillDbContext dbContext)
         {
             this.dbContext = dbContext;
+            var result = (from a in dbContext.units
+                          select new U
+                          {
+                              id = a.unit_id,
+                              name = a.unit_name,
+                             
+                          }).ToArray();
+            var items = (from b in dbContext.items
+                         select new 
+                         {
+                             id = b.item_id,
+                             name = b.item_name,
+                             unit_id = b.item_unit_id
+                         }).ToList();
+            foreach(var a in result)
+            {
+                a.items = items.Where(x => x.unit_id == a.id).Select(x => new I { id = x.id, name = x.name}).ToList();
+            }
+        }
+
+        class U
+        {
+            public int id { get; set; }
+            public string name { get; set; }
+            public List<I> items { get; set; }
+        }
+
+        class I
+        {
+            public int id { get; set; }
+            public string name { get; set; }
         }
 
         [HttpGet]
@@ -48,15 +79,28 @@ namespace bill.Controllers
             }
             else
             {
+                int count = (from a in dbContext.items select a).Count();
+                string code = "ITEM-";
+                if(count > 0)
+                {
+                    string item_code = (from a in dbContext.items orderby a.item_id ascending select a.item_code).LastOrDefault();
+                    string sub = item_code.Substring(5);
+                    int last = int.Parse(sub);
+                    ++last;
+
+                    code += last.ToString("D4");
+                }
+                else
+                {
+                    code += "0001";
+                }
+
                 item items = new item();
+                items.item_code = code;
                 items.item_name = param.item_name;
                 items.item_price = param.item_price;
                 items.item_unit_id = param.item_unit_id;
                 dbContext.items.Add(items);
-                dbContext.SaveChanges();
-
-                item items2 = dbContext.items.FirstOrDefault(s => s.item_id == items.item_id);
-                items2.item_code = "ITEM-"+items.item_id.ToString("D4");
                 dbContext.SaveChanges();
             }
             return Ok(new Result { status_code = 1, message = "success" });
@@ -96,10 +140,16 @@ namespace bill.Controllers
             }
             else
             {
-                item items = dbContext.items.FirstOrDefault(s => s.item_id == param.item_id);
-                dbContext.items.Remove(items);
-                dbContext.SaveChanges();
-            }
+                item items = dbContext.items.SingleOrDefault(s => s.item_id == param.item_id);
+                if (items == null)
+                {
+                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                }
+                else
+                {
+                    dbContext.items.Remove(items);
+                    dbContext.SaveChanges();
+                }            }
             return Ok(new Result { status_code = 1, message = "success" });
         }
     }
