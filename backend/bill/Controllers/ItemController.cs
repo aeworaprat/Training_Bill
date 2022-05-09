@@ -14,37 +14,6 @@ namespace bill.Controllers
         public ItemController(BillDbContext dbContext)
         {
             this.dbContext = dbContext;
-            var result = (from a in dbContext.units
-                          select new U
-                          {
-                              id = a.unit_id,
-                              name = a.unit_name,
-                             
-                          }).ToArray();
-            var items = (from b in dbContext.items
-                         select new 
-                         {
-                             id = b.item_id,
-                             name = b.item_name,
-                             unit_id = b.item_unit_id
-                         }).ToList();
-            foreach(var a in result)
-            {
-                a.items = items.Where(x => x.unit_id == a.id).Select(x => new I { id = x.id, name = x.name}).ToList();
-            }
-        }
-
-        class U
-        {
-            public int id { get; set; }
-            public string name { get; set; }
-            public List<I> items { get; set; }
-        }
-
-        class I
-        {
-            public int id { get; set; }
-            public string name { get; set; }
         }
 
         [HttpGet]
@@ -118,11 +87,18 @@ namespace bill.Controllers
             }
             else
             {
-                item items = dbContext.items.FirstOrDefault(s => s.item_id == param.item_id);
-                items.item_name = param.item_name;
-                items.item_price = param.item_price;
-                items.item_unit_id = param.item_unit_id;
-                dbContext.SaveChanges();
+                item items = dbContext.items.SingleOrDefault(s => s.item_id == param.item_id);
+                if (items == null)
+                {
+                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                }
+                else
+                {
+                    items.item_name = param.item_name;
+                    items.item_price = param.item_price;
+                    items.item_unit_id = param.item_unit_id;
+                    dbContext.SaveChanges();
+                }
             }
             return Ok(new Result { status_code = 1, message = "success" });
         }

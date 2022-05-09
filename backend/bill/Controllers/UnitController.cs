@@ -80,9 +80,16 @@ namespace bill.Controllers
             }
             else
             {
-                unit unit = dbContext.units.FirstOrDefault(s => s.unit_id == param.unit_id);
-                unit.unit_name = param.unit_name;
-                dbContext.SaveChanges();
+                unit unit = dbContext.units.SingleOrDefault(s => s.unit_id == param.unit_id);
+                if (unit == null)
+                {
+                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                }
+                else
+                {
+                    unit.unit_name = param.unit_name;
+                    dbContext.SaveChanges();
+                }
             }
             return Ok(new Result { status_code = 1, message = "success" });
         }
