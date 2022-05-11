@@ -6,7 +6,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="../api.js"></script>
 
 </head>
 <body>
@@ -33,7 +32,7 @@
         </div>
         <label>วันที่</label><br>
         <input type="date" id="date" style="width:195px;" disabled>
-        <button style="float: right;" onclick="add_table()">เพิ่ม</button>
+        <button style="float: right;" id="add" >เพิ่ม</button>
         <br><br>
         <table id="table">
             <thead>
@@ -83,7 +82,7 @@
                 </div>
             </div>
             <br>
-            <button onclick="Insert()">บันทึก</button>
+            <button id="save">บันทึก</button>
             <br><br><br>
         </div>
         <br><br><br><br><br><br><br><br>
@@ -101,119 +100,112 @@
         <td class="total"></td>
         <td><button class="delete">ลบ</button></td>
     </template>
-    <script>
-        let data_item; // data item[]
-        let x=1;
-
-        ( async function() 
-        {
-            document.getElementById('date').valueAsDate = new Date();;
-            data_item = await GetAllItem()
-        })();
+    <script type="module">
+        import { GetAllItem, InsertReceipt } from '../api.js'
+        let data_item 
+        let x=0;
+        let bill_detail = [];
         
-        function add_table(){
-            const table = document.querySelector("#table tbody")
+        window.addEventListener('DOMContentLoaded', async (event) => {
+            data_item = await GetAllItem();
+            document.getElementById('date').valueAsDate = new Date();
+            document.getElementById('add').addEventListener('click', add_detail)
+            document.getElementById('save').addEventListener('click', Insert)
+            document.getElementById('last_discount').addEventListener('change', CalculateTotalPrice)
+        })
+
+        function add_detail(){
+            const table = document.querySelector("#table tbody");
             const template = document.getElementById("receipt_template");
             const tr = document.createElement("tr")
             const template_clone = template.content.cloneNode(true);
+            tr.dataset.index = x;
+            x++;
+            template_clone.querySelector('.num').innerText = x
+            const select = template_clone.querySelector(".item")
+            let option = document.createElement("option");
+            select.appendChild(option);
+            for (let i = 0; i < data_item.length; i++) {
+                option = document.createElement("option");
+                option.setAttribute("value", data_item[i]['item_id']);
+                option.text = data_item[i]['item_code'];
+                select.appendChild(option);
+            }
+            const name = template_clone.querySelector('.name')
+            const unit = template_clone.querySelector('.unit')
+            const qty = template_clone.querySelector(".qty")
+            const price = template_clone.querySelector('.price')
+            const discount = template_clone.querySelector(".discount")
+            const discount_bath = template_clone.querySelector('.discount_bath')
+            const total = template_clone.querySelector('.total')
+
+            
+            select.addEventListener('change', function(){ 
+                const item = data_item.find(x => x.item_id === +select.value)
+                unit.innerText = item.item_unit.unit_name
+                name.innerText = item.item_name
+                price.innerText = item.item_price.toFixed(2)
+
+                discount_bath.value = CalculateDiscount(+qty.value, +price.innerText, +discount.value)
+                const cal = (qty.value * price.innerText) - discount_bath.value;
+                if(cal < 0){
+                    total.innerText = '0.00';
+                }else{
+                    total.innerText = cal.toFixed(2);
+                }
+                CalculateProductPrice();
+                CalculateProductDiscount();
+                CalculateTotalPrice();
+            })
+
+            qty.addEventListener('change', function(){ 
+                discount_bath.value = CalculateDiscount(+qty.value, +price.innerText, +discount.value)
+                const cal = (qty.value * price.innerText) - discount_bath.value;
+                if(cal < 0){
+                    total.innerText = '0.00';
+                }else{
+                    total.innerText = cal.toFixed(2);
+                }
+                CalculateProductPrice();
+                CalculateProductDiscount();
+                CalculateTotalPrice();
+            })
+
+            discount.addEventListener('change', function(){ 
+                discount_bath.value = CalculateDiscount(+qty.value, +price.innerText, +discount.value)
+                const cal = (qty.value * price.innerText) - discount_bath.value;
+                if(cal < 0){
+                    total.innerText = '0.00';
+                }else{
+                    total.innerText = cal.toFixed(2);
+                }
+                CalculateProductPrice();
+                CalculateProductDiscount();
+                CalculateTotalPrice();
+            })
+
+            template_clone.querySelector('.delete').addEventListener('click', function(){ 
+                const index = +tr.dataset.index
+                console.log(x)
+                this.parentNode.parentNode.remove();
+                x--;
+                const trs = document.querySelectorAll('#table tbody tr');
+                for(let i = index; i< x ; i++){
+                    const anotherTr = trs[i]
+                    anotherTr.dataset.index = i;
+                    anotherTr.querySelector('.num').innerText = i+1; 
+                }
+                CalculateProductPrice();
+                CalculateProductDiscount();
+                CalculateTotalPrice();
+            })
+
             tr.appendChild(template_clone);
             table.appendChild(tr);
-            SetTable()
-        }
-        
-        // delete table
-        function SetTable(){
-            const table = document.querySelector("#table tbody")
-            const template = document.getElementById("receipt_template");
-            const data = document.querySelectorAll('#table tbody tr')
-            table.innerHTML = ''
-            data.forEach((row, index) => {
-                const tr = document.createElement("tr")
-                const template_clone = template.content.cloneNode(true);
-                template_clone.querySelector('.num').innerText = index+1
-                const select = template_clone.querySelector(".item")
-                let option = document.createElement("option");
-                select.appendChild(option);
-                for (i = 0; i < data_item.length; i++) {
-                    option = document.createElement("option");
-                    option.setAttribute("value", data_item[i]['item_id']);
-                    option.text = data_item[i]['item_code'];
-                    select.appendChild(option);
-                }
-                const name = template_clone.querySelector('.name')
-                const unit = template_clone.querySelector('.unit')
-                const qty = template_clone.querySelector(".qty")
-                const price = template_clone.querySelector('.price')
-                const discount = template_clone.querySelector(".discount")
-                const discount_bath = template_clone.querySelector('.discount_bath')
-                const total = template_clone.querySelector('.total')
-
-                name.innerText = row.querySelector('.name').innerText
-                unit.innerText = row.querySelector('.unit').innerText
-                select.value = row.querySelector('.item').value
-                qty.value = row.querySelector('.qty').value
-                price.innerText = row.querySelector('.price').innerText
-                discount.value = row.querySelector('.discount').value
-                discount_bath.value = row.querySelector('.discount_bath').value
-                total.innerText = row.querySelector('.total').innerText
-
-                select.addEventListener('change', function(){ 
-                    for (i = 0; i < data_item.length; i++) {
-                        if(data_item[i]['item_id'] == select.value){
-                            unit.innerText = data_item[i]['item_unit']['unit_name']
-                            name.innerText = data_item[i]['item_name']
-                            price.innerText = data_item[i]['item_price'].toFixed(2)
-                        }
-                    }
-                    discount_bath.value = CalculateDiscount(qty.value, price.innerText, discount.value)
-                    const cal = (qty.value * price.innerText) - discount_bath.value;
-                    if(cal < 0){
-                        total.innerText = '0.00';
-                    }else{
-                        total.innerText = cal.toFixed(2);
-                    }
-                    CalculateProductPrice();
-                    CalculateProductDiscount();
-                    CalculateTotalPrice();
-                })
-
-                qty.addEventListener('change', function(){ 
-                    discount_bath.value = CalculateDiscount(qty.value, price.innerText, discount.value)
-                    const cal = (qty.value * price.innerText) - discount_bath.value;
-                    if(cal < 0){
-                        total.innerText = '0.00';
-                    }else{
-                        total.innerText = cal.toFixed(2);
-                    }
-                    CalculateProductPrice();
-                    CalculateProductDiscount();
-                    CalculateTotalPrice();
-                })
-
-                discount.addEventListener('change', function(){ 
-                    discount_bath.value = CalculateDiscount(qty.value, price.innerText, discount.value)
-                    const cal = (qty.value * price.innerText) - discount_bath.value;
-                    if(cal < 0){
-                        total.innerText = '0.00';
-                    }else{
-                        total.innerText = cal.toFixed(2);
-                    }
-                    CalculateProductPrice();
-                    CalculateProductDiscount();
-                    CalculateTotalPrice();
-                })
-
-                template_clone.querySelector('.delete').addEventListener('click', function(){ 
-                    this.parentNode.parentNode.remove();
-                    SetTable()
-                })
-
-                tr.appendChild(template_clone);
-                table.appendChild(tr);
-            })
         }
 
         function CalculateDiscount(qty, price, discount){
+        
             let total = (qty * price)
             let discount_bath = (total * discount)/100
             if(discount_bath > total){
@@ -225,8 +217,8 @@
         function CalculateProductPrice(){
             let array_total = document.getElementsByClassName("total");
             let total = 0;
-            for(i=0; i<array_total.length;i++){
-                total += Number(array_total[i].innerHTML)
+            for(let i=0; i<array_total.length;i++){
+                total += +array_total[i].innerHTML
             }
             document.getElementById("product_price").value = total.toFixed(2);
         }
@@ -235,8 +227,8 @@
         {
             let array_discount = document.getElementsByClassName("discount_bath");
             let total = 0;
-            for(i=0; i<array_discount.length;i++){
-                total += Number(array_discount[i].value)
+            for(let i=0; i<array_discount.length;i++){
+                total += +array_discount[i].value
             }
             document.getElementById("product_discount").value = total.toFixed(2);
         }
@@ -254,28 +246,22 @@
         }
 
         async function Insert(){
-
-            let select = document.getElementsByClassName("item");
-            let qty = document.getElementsByClassName("qty");
-            let price = document.getElementsByClassName("price");
-            let discount = document.getElementsByClassName("discount");
-            let discount_bath = document.getElementsByClassName("discount_bath");
-            let total = document.getElementsByClassName("total");
+            const trs = document.querySelectorAll('#table tbody tr');
             const list = [];
     
-            for(i=0;i<select.length;i++){
-                if(select[i].value != ''){
-
+            trs.forEach((row) =>{
+                if(row.querySelector('.item').value != ''){
                     list.push({
-                        list_item_id : select[i].value,
-                        list_quantity : qty[i].value == ''? 0: qty[i].value,
-                        list_price : price[i].innerText,
-                        list_discount : discount[i].value == ''? 0: discount[i].value,
-                        list_discount_bath : discount_bath[i].value,
-                        list_total_price : total[i].innerText
+                        list_item_id : row.querySelector('.item').value,
+                        list_quantity : row.querySelector('.qty').value == ''? 0: row.querySelector('.qty').value,
+                        list_price : row.querySelector('.price').innerText,
+                        list_discount : row.querySelector('.discount').value == ''? 0: row.querySelector('.discount').value,
+                        list_discount_bath : row.querySelector('.discount_bath').value,
+                        list_total_price : row.querySelector('.total').innerText
                     })
                 }
-            }        
+            })   
+        
             let receipt_product_price = document.getElementById('product_price').value;
             let receipt_product_discount = document.getElementById('product_discount').value;
             let receipt_discount = document.getElementById('last_discount').value;
