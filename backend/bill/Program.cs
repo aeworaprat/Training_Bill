@@ -1,4 +1,8 @@
+using bill;
 using bill.Context;
+using bill.Repositories;
+using bill.ViewModels;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +26,19 @@ builder.Services.AddCors(x =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddTransient<UnitRepository>();
+builder.Services.AddTransient<ItemRepository>();
+builder.Services.AddTransient<ReceiptRepository>();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    //options.InvalidModelStateResponseFactory = (action) => {
+    //    return new OkObjectResult(new Result { status_code = -1, message = "invalit" });
+    //};
+    options.SuppressModelStateInvalidFilter = true;
+});
+
+
 
 var app = builder.Build();
 

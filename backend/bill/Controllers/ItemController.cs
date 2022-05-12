@@ -1,5 +1,6 @@
 ﻿using bill.Context;
 using bill.Models;
+using bill.Repositories;
 using bill.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,32 +10,19 @@ namespace bill.Controllers
     [Route("[controller]/[action]")]
     public class ItemController : ControllerBase
     {
-        readonly BillDbContext dbContext;
+        readonly ItemRepository itemRepository;
 
-        public ItemController(BillDbContext dbContext)
+        public ItemController(ItemRepository itemRepository)
         {
-            this.dbContext = dbContext;
+            this.itemRepository = itemRepository;
+
         }
 
         [HttpGet]
         public IActionResult GetAll()
         {
-            var items = (from a in dbContext.items
-                         join b in dbContext.units on a.item_unit_id equals b.unit_id
-                         orderby a.item_id ascending
-                         select new ItemViewModel
-                         {
-                             item_id = a.item_id,
-                             item_code = a.item_code,
-                             item_name = a.item_name,
-                             item_price = a.item_price,
-                             item_unit_id = a.item_unit_id,
-                             item_unit = new UnitViewModel
-                             {
-                               unit_id = b.unit_id,
-                               unit_name = b.unit_name,
-                             }
-                         }).ToList();
+            List<ItemViewModel> items = itemRepository.GetAll();
+            
 
             return Ok(new Result { status_code = 1, message = "success", data = items});
         }
@@ -42,91 +30,65 @@ namespace bill.Controllers
         [HttpPost]
         public IActionResult InsertItem([FromBody] ItemViewModel param)
         {
-            if (dbContext.items.Any(x => x.item_name == param.item_name))
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail"});
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                int count = (from a in dbContext.items select a).Count();
-                string code = "ITEM-";
-                if(count > 0)
+                if (itemRepository.CheckNameAlreadyInUse(param))
                 {
-                    string item_code = (from a in dbContext.items orderby a.item_id ascending select a.item_code).LastOrDefault();
-                    string sub = item_code.Substring(5);
-                    int last = int.Parse(sub);
-                    ++last;
-
-                    code += last.ToString("D4");
+                    return Ok(new Result { status_code = -1, message = "fail" });
                 }
                 else
                 {
-                    code += "0001";
+                    Result result = itemRepository.InsertItem(param);
+                    return Ok(result);
                 }
-
-                item items = new item();
-                items.item_code = code;
-                items.item_name = param.item_name;
-                items.item_price = param.item_price;
-                items.item_unit_id = param.item_unit_id;
-                dbContext.items.Add(items);
-                dbContext.SaveChanges();
             }
-            return Ok(new Result { status_code = 1, message = "success" });
+                
         }
 
         [HttpPost]
         public IActionResult UpdateItem([FromBody] ItemViewModel param)
         {
-            int count = (from a in dbContext.items
-                         where a.item_id != param.item_id && a.item_name == param.item_name
-                         select a).Count();
-            if(count > 0)
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail" });
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                item items = dbContext.items.SingleOrDefault(s => s.item_id == param.item_id);
-                if (items == null)
+                if (itemRepository.CheckNameAlreadyInUse(param, true))
                 {
-                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                    return Ok(new Result { status_code = -1, message = "fail" });
                 }
                 else
                 {
-                    items.item_name = param.item_name;
-                    items.item_price = param.item_price;
-                    items.item_unit_id = param.item_unit_id;
-                    dbContext.SaveChanges();
+                    Result result = itemRepository.UpdateItem(param);
+                    return Ok(result);
                 }
             }
-            return Ok(new Result { status_code = 1, message = "success" });
         }
 
         [HttpPost]
         public IActionResult DeleteItem([FromBody] ItemViewModel param)
         {
-            int count = (from a in dbContext.lists
-                         where a.list_item_id == param.item_id
-                         select a).Count();
-
-            if(count > 0)
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail" });
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                item items = dbContext.items.SingleOrDefault(s => s.item_id == param.item_id);
-                if (items == null)
+                if (itemRepository.CheckNameInUseDelete(param))
                 {
-                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                    return Ok(new Result { status_code = -1, message = "fail" });
                 }
                 else
                 {
-                    dbContext.items.Remove(items);
-                    dbContext.SaveChanges();
-                }            }
-            return Ok(new Result { status_code = 1, message = "success" });
+                    Result result = itemRepository.DeleteItem(param);
+                    return Ok(result);
+                }
+            }
         }
     }
 }

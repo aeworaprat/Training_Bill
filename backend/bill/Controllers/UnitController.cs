@@ -1,5 +1,6 @@
 ﻿using bill.Context;
 using bill.Models;
+using bill.Repositories;
 using bill.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,17 +10,17 @@ namespace bill.Controllers
     [Route("[controller]/[action]")]
     public class UnitController : ControllerBase
     {
-        readonly BillDbContext dbContext;
+        readonly UnitRepository unitRepository;
 
-        public UnitController(BillDbContext dbContext)
+        public UnitController(UnitRepository unitRepository)
         {
-            this.dbContext = dbContext;
+            this.unitRepository = unitRepository;
         }
 
         [HttpGet]
         public IActionResult GetAll()
         {
-            List<unit> units = dbContext.units.OrderBy(x=>x.unit_id).ToList();
+            List<UnitViewModel> units = unitRepository.GetAll();
 
             return Ok(new Result { status_code = 1, message = "success", data = units });
         }
@@ -27,42 +28,43 @@ namespace bill.Controllers
         [HttpPost]
         public IActionResult InsertUnit([FromBody] UnitViewModel param)
         {
-            if (dbContext.units.Any(x => x.unit_name == param.unit_name))
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail"});
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                unit unit = new unit();
-                unit.unit_name = param.unit_name;
-                dbContext.units.Add(unit);
-                dbContext.SaveChanges();
+                bool alreadyUsed = unitRepository.CheckNameAlreadyInUse(param);
+                if (alreadyUsed)
+                {
+                    return Ok(new Result { status_code = -1, message = "fail" });
+                }
+                else
+                {
+                    Result result = unitRepository.InsertUnit(param);
+                    return Ok(result);
+                }
             }
-            return Ok(new Result { status_code = 1, message = "success" });
         }
 
         [HttpPost]
         public IActionResult DeleteUnit([FromBody] UnitViewModel param)
         {
-            int count = (from a in dbContext.units
-                         join b in dbContext.items on a.unit_id equals b.item_unit_id
-                         where b.item_unit_id == param.unit_id select a).Count();
-            if (count > 0)
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail" });
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                unit unit = dbContext.units.SingleOrDefault(s => s.unit_id == param.unit_id);
-                if(unit == null)
+                bool alreadyUsed = unitRepository.CheckUnitInUse(param);
+                if (alreadyUsed)
                 {
-                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                    return Ok(new Result { status_code = -1, message = "fail" });
                 }
                 else
                 {
-                    dbContext.units.Remove(unit);
-                    dbContext.SaveChanges();
-                    return Ok(new Result { status_code = 1, message = "success" });
+                    Result result = unitRepository.DeleteUnit(param);
+                    return Ok(result);
                 }
             }
         }
@@ -70,28 +72,23 @@ namespace bill.Controllers
         [HttpPost]
         public IActionResult UpdateUnit([FromBody] UnitViewModel param)
         {
-            int count = (from a in dbContext.units
-                         where a.unit_id != param.unit_id && a.unit_name == param.unit_name
-                         select a).Count();
-
-            if (count > 0)
+            if (!ModelState.IsValid)
             {
-                return Ok(new Result { status_code = -1, message = "fail" });
+                return Ok(new Result { status_code = -1, message = "invalit" });
             }
             else
             {
-                unit unit = dbContext.units.SingleOrDefault(s => s.unit_id == param.unit_id);
-                if (unit == null)
+                bool alreadyUsed = unitRepository.CheckNameAlreadyInUse(param, true);
+                if (alreadyUsed)
                 {
-                    return Ok(new Result { status_code = -1, message = "not fonnd" });
+                    return Ok(new Result { status_code = -1, message = "fail" });
                 }
                 else
                 {
-                    unit.unit_name = param.unit_name;
-                    dbContext.SaveChanges();
+                    Result result = unitRepository.UpdateUnit(param);
+                    return Ok(result);
                 }
             }
-            return Ok(new Result { status_code = 1, message = "success" });
         }
     }
 }
