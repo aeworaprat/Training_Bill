@@ -10,30 +10,28 @@ export async function GetAllUnit()
 
 export async function InsertUnti(name)
 {
-    let result
-    await axios.post(end_point+'/Unit/InsertUnit', { 
+    const result = await axios.post(end_point+'/Unit/InsertUnit', { 
         unit_name: name 
     }).then(function (response) {
-        result = response.data;
+        return response.data
     })
     return result;
 }
 
 export async function DeleteUnit(id, name)
 {
-    let result
-    await axios.post(end_point+'/Unit/DeleteUnit', {
+    const result = await axios.post(end_point+'/Unit/DeleteUnit', {
         unit_id : id,
         unit_name: name
     }).then(function (response) {
-        result = response.data
+        return response.data
     })
     return result
 }
 
 export async function UpdateUnit(id ,name)
 {
-    let result = await axios.post(end_point+'/Unit/UpdateUnit', {
+    const result = await axios.post(end_point+'/Unit/UpdateUnit', {
         unit_id : id,
         unit_name: name
     }).then(function (response) {
@@ -52,26 +50,24 @@ export async function GetAllItem()
 
 export async function InsertItem(name, price, unit_id)
 {
-    let result
-    await axios.post(end_point+'/Item/InsertItem', { 
+    const result = await axios.post(end_point+'/Item/InsertItem', { 
         item_name : name,
         item_price : Number(price),
         item_unit_id : Number(unit_id)
     }).then(function (response) {
-        result = response.data;
+        return response.data;
     })
     return result
 }
 
 export async function UpdateItem(name, price, unit_id, item_id){
-    let result
-    await axios.post(end_point+'/Item/UpdateItem', { 
+    const result = await axios.post(end_point+'/Item/UpdateItem', { 
         item_id : item_id,
         item_name : name,
         item_price : Number(price),
         item_unit_id : Number(unit_id)
     }).then(function (response) {
-        result = response.data;
+        return response.data;
     })
     return result
 }
@@ -79,15 +75,14 @@ export async function UpdateItem(name, price, unit_id, item_id){
 
 export async function DeleteItem(id, code, name)
 {
-    let result
-    await axios.post(end_point+'/Item/DeleteItem', {
+    const result = await axios.post(end_point+'/Item/DeleteItem', {
         item_id : id,
         item_code : code,
         item_name : name
     }).then(function (response) {
-        result = response.data;
+        return response.data;
     })
-    return result
+    return result;
 }
 
 //receipt manage
@@ -109,15 +104,14 @@ export async function GetReceiptById(id){
 
 // receipt create
 export async function InsertReceipt(receipt_product_price, receipt_product_discount, receipt_discount, receipt_total_price, list){
-    let result
-    await axios.post(end_point+'/Receipt/InsertReceipt', {
+    const result = await axios.post(end_point+'/Receipt/InsertReceipt', {
         receipt_product_price : receipt_product_price,
         receipt_product_discount : receipt_product_discount,
         receipt_discount : receipt_discount,
         receipt_total_price, receipt_total_price,
         receipt_list : list
     }).then(function (response) {
-        result = response.data;
+        return response.data;
     })
     return result
 }

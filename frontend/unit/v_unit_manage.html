@@ -134,6 +134,7 @@
     async function Delete(id, name)
     {
         const result = await DeleteUnit(id, name)
+
         if(result.status_code == -1){
             alert(result.message)
         }else{

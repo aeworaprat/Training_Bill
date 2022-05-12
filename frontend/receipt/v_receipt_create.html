@@ -248,7 +248,6 @@
         async function Insert(){
             const trs = document.querySelectorAll('#table tbody tr');
             const list = [];
-    
             trs.forEach((row) =>{
                 if(row.querySelector('.item').value != ''){
                     list.push({
@@ -269,13 +268,17 @@
             if(receipt_discount == ''){
                 receipt_discount = 0;
             }
-            const result = await InsertReceipt(receipt_product_price, receipt_product_discount, receipt_discount, receipt_total_price, list)
+            if(list.length == 0){
+                alert('no select')
+            }else{    
+                const result = await InsertReceipt(receipt_product_price, receipt_product_discount, receipt_discount, receipt_total_price, list)
 
-            if(result.status_code == -1){
-                alert(result.message);
-            }else{
-                alert(result.message);
-                location.reload();
+                if(result.status_code == -1){
+                    alert(result.message);
+                }else{
+                    alert(result.message);
+                    location.reload();
+                }
             }
         }
 

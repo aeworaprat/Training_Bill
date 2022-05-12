@@ -147,12 +147,13 @@
             alert('no value');
         }else{
             const result = await InsertItem(name, price, unit_id)
+            GetItem();
+            CloseModal();
+
             if(result.status_code == -1){
                 alert(result.message);
             }else{
-                GetItem();
                 alert(result.message);
-                CloseModal();
             }
         }
     }
@@ -223,6 +224,8 @@
                 const price = input_price.value
                 const select = input_select.value
                 Insert(name, price, select)
+                GetItem();
+                CloseModal();
             })
         }else{
             template_clone.querySelector('.modal-title').innerText = 'แก้ไขสินค้า'
@@ -235,6 +238,7 @@
                 const price = input_price.value
                 const select = input_select.value
                 Update(name, price, select, row.item_id)
+                CloseModal();
             })
         }
         content.appendChild(template_clone)
