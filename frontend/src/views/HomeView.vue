@@ -5,14 +5,13 @@
   </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue';
+<script>
 import HelloWorld from '@/components/HelloWorld.vue'; // @ is an alias to /src
 
-export default Vue.extend({
+export default {
   name: 'HomeView',
   components: {
     HelloWorld,
   },
-});
+};
 </script>
