@@ -85,7 +85,7 @@ namespace bill.Repositories
 
         public ReceiptViewModel GetReceiptById(int id)
         {
-            ReceiptViewModel? result = (from x in dbContext.receipts
+            ReceiptViewModel result = (from x in dbContext.receipts
                                        where x.receipt_id == id
                                        select new ReceiptViewModel
                                        {
