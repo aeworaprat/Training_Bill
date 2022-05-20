@@ -73,21 +73,14 @@ namespace bill.Controllers
         [HttpPost]
         public IActionResult DeleteItem([FromBody] ItemViewModel param)
         {
-            if (!ModelState.IsValid)
+            if (itemRepository.CheckNameInUseDelete(param))
             {
-                return Ok(new Result { status_code = -1, message = "invalit" });
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
-                if (itemRepository.CheckNameInUseDelete(param))
-                {
-                    return Ok(new Result { status_code = -1, message = "fail" });
-                }
-                else
-                {
-                    Result result = itemRepository.DeleteItem(param);
-                    return Ok(result);
-                }
+                Result result = itemRepository.DeleteItem(param);
+                return Ok(result);
             }
         }
     }

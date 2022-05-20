@@ -50,23 +50,16 @@ namespace bill.Controllers
         [HttpPost]
         public IActionResult DeleteUnit([FromBody] UnitViewModel param)
         {
-            if (!ModelState.IsValid)
+            bool alreadyUsed = unitRepository.CheckUnitInUse(param);
+            if (alreadyUsed)
             {
-                return Ok(new Result { status_code = -1, message = "invalit" });
+                return Ok(new Result { status_code = -1, message = "fail" });
             }
             else
             {
-                bool alreadyUsed = unitRepository.CheckUnitInUse(param);
-                if (alreadyUsed)
-                {
-                    return Ok(new Result { status_code = -1, message = "fail" });
-                }
-                else
-                {
-                    Result result = unitRepository.DeleteUnit(param);
-                    return Ok(result);
-                }
-            }
+                Result result = unitRepository.DeleteUnit(param);
+                return Ok(result);
+            }   
         }
 
         [HttpPost]

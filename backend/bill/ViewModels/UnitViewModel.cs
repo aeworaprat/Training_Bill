@@ -8,6 +8,6 @@ namespace bill.ViewModels
 
         [Required]
         [StringLength(45)]
-        public string unit_name { get; set; } = null!;
+        public string unit_name { get; set; }
     }
 }

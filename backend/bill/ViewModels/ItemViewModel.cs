@@ -8,7 +8,7 @@ namespace bill.ViewModels
         public string? item_code { get; set; }
         [Required]
         [StringLength(42)]
-        public string item_name { get; set; }
+        public string? item_name { get; set; }
         [Required]
         [Range(typeof(decimal), "0", "1000000000")]
         public decimal item_price { get; set; }
