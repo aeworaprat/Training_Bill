@@ -7,7 +7,7 @@
         </div>
         <div class="col-md-3">
             <label>วันที่</label><br>
-            <input type="date" v-model="date" style="width:172px;" disabled>
+            <input type="date" v-bind:value="date" style="width:172px;" disabled>
         </div>
         <br>
         <button @click="AddRow()">เพิ่ม</button>
@@ -30,8 +30,9 @@
             <tbody>
                 <tr v-for="(row, index) in rows" :key="index">
                     <td>{{index+1}}</td>
-                    <td>
-                        <Dropdown v-bind:value="row.item_id" :options="itemOptions" @input="itemChanged(row, $event)" />
+                    <td @click="OpenModalItem(row, index)">
+                        {{row.product.item_code}}
+                        <!-- <Dropdown v-bind:value="row.item_id" :options="itemOptions" @input="itemChanged(this.row[index], $event)" /> -->
                     </td>
                     <td>{{row.product.item_name}}</td>
                     <td>{{row.product.item_unit.unit_name}}</td>
@@ -55,16 +56,108 @@
             <label>ราคารวมสุทธิ</label> <br>
             <input type="text" v-bind:value="totalPrice" disabled><br><br>
             <button id="save" @click="Insert()">บันทึก</button>
+            <button id="save" @click="showModalView = true">ดูตัวอย่าง</button>
+
         </div>
+        <Modal :show="showModalItem">
+            <template #header>
+            <h3>Item List</h3>
+            </template>
+            <template #body>
+                <Dropdown :options="itemOptions" @input="ItemModalChanged($event)" />
+                <br>
+                <hr>
+                <div>
+                    <h3>Item  Detail</h3>
+                    <b>Name</b><br>
+                    {{modal.product.item_name}}
+                    <br>
+                    <br>
+                    <b>Unit</b><br>
+                    {{modal.product.item_unit.unit_name}}
+                    <br>
+                    <br>
+                    <b>Price</b><br>
+                    {{modal.product.item_price}}
+                    <br>
+                    <br>
+                    </div>
+            </template>
+            <template #footer>
+            <button @click="ChooseItem()">Choose this item</button>
+            <button @click="showModalItem = false">Cancel</button>
+
+            </template>
+        </Modal>
+        <Modal :show="showModalView">
+            <template #header>
+                <h3>ข้อมูลบิล</h3>
+            </template>
+            <template #body>
+                <div>
+                    <label>รหัสบิล</label><br>
+                    <input type="text" value="BILL-XXXX" disabled>
+                </div>
+                <div>
+                    <label>วันที่</label><br>
+                    <input type="date" v-bind:value="date" style="width:172px;" disabled>
+                </div>
+                <br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="5%">No.</th>
+                            <th width="15%">รหัสสินค้า</th>
+                            <th width="15%">ชื่อสินค้า</th>
+                            <th width="5%">หน่วย</th>
+                            <th width="5%">จำนวน</th>
+                            <th width="15%">ราคา</th>
+                            <th width="10%">ส่วนลด (%)</th>
+                            <th width="10%">ส่วนลด (บาท)</th>
+                            <th width="20%">รวมเงิน</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(row, index) in rows" :key="index">
+                            <td>{{index+1}}</td>
+                            <td>{{row.product.item_code}}</td>
+                            <td>{{row.product.item_name}}</td>
+                            <td>{{row.product.item_unit.unit_name}}</td>
+                            <td style="text-align:right">{{row.qty}}</td>
+                            <td style="text-align:right">{{row.product.item_price}}</td>
+                            <td>{{row.discount}}</td>
+                            <td style="text-align:right">{{getDiscountBaht(row)}}</td>
+                            <td style="text-align:right">{{getRowTotal(row)}}</td>
+                        </tr>        
+                    </tbody>
+                </table>
+                <br>
+                <div style="float:right">
+                    <label>ยอดรวมสินค้า</label><br>
+                    <input style="text-align:right" type="text" v-bind:value="productPrice" disabled><br><br> 
+                    <label>ยอดรวมส่วนลดสินค้า</label><br>
+                    <input style="text-align:right" type="text" v-bind:value="productDiscount" disabled><br><br>
+                    <label>ส่วนลดท้ายบิล</label> <br>
+                    <input style="text-align:right" type="text" v-bind:value="receipt_discount" disabled><br><br>
+                    <label>ราคารวมสุทธิ</label> <br>
+                    <input style="text-align:right" type="text" v-bind:value="totalPrice" disabled><br><br>
+                </div>
+            </template>
+            <template #footer>
+                <button @click="showModalView = false">ยกเลิก</button>
+            </template>
+        </Modal>
     </div>
 </template>
 <script>
 import { GetAllItem, InsertReceipt } from '@/helpers/api.js'
 import Dropdown from '@/components/Dropdown.vue'
+import Modal from '@/components/Modal.vue'
 
 export default {
     components : {
-        Dropdown
+        Dropdown,
+        Modal
     },
     data() {
         return {
@@ -72,6 +165,15 @@ export default {
             rows : [],
             date : new Date().toISOString().slice(0,10),
             receipt_discount : '',
+            showModalItem : false,
+            showModalView : false,
+            modal : {
+                index : null,
+                item_id : null,
+                product : {
+                    item_unit : {}
+                },
+            }
         }
     },
     computed : {
@@ -139,7 +241,7 @@ export default {
                 if(discount_baht > total){
                     discount_baht = total;
                 }
-                return discount_baht
+                return discount_baht.toFixed(2)
             }else{
                 return 0
             }
@@ -148,8 +250,6 @@ export default {
         itemChanged(row, item_id){
             row.item_id = item_id
             row.product = this.items.find(x => x.item_id === item_id)
-            row.item_name
-
         },
         async GetItem(){
             const result = await GetAllItem();
@@ -208,6 +308,35 @@ export default {
 
         RemoveRow(index){
             this.rows.splice(index, 1);
+        },
+
+        OpenModalItem(row, index){
+            this.modal.index = index
+            this.modal.item_id = null,
+            this.modal.product = {
+                item_unit : {}
+            }
+            if(row.item_id != null){
+                this.modal.item_id = row.item_id
+                this.modal.product = row.product
+            }
+            this.showModalItem = true
+        },
+        ItemModalChanged(item_id){
+            if(item_id == ''){
+                this.modal.item_id = null,
+                this.modal.product = {
+                    item_unit : {}
+                }
+            }else{
+                this.modal.item_id = item_id
+                this.modal.product = this.items.find(x => x.item_id === item_id)
+            }
+        },
+        ChooseItem(){
+            this.rows[this.modal.index].item_id = this.modal.item_id
+            this.rows[this.modal.index].product = this.modal.product
+            this.showModalItem = false
         },
     }
 }

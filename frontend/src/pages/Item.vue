@@ -3,73 +3,93 @@
     <h2>จัดการสินค้า</h2>
     <button @click="OpenModal()">เพิ่มสินค้า</button>
     <br><br>
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th width='5%'>No.</th>
-                <th width='15%'>รหัสสินค้า</th>
-                <th>ชื่อสินค้า</th>
-                <th width='10%'>หน่วย</th>
-                <th style='text-align:right'>ราคา</th>
-                <th width='20%' style='text-align:center'>ดำเนินการ</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="(item, index) in item" :key="item.item_id" > 
-                <td>{{index+1}}</td>
-                <td>{{item.item_code}}</td>
-                <td>{{item.item_name}}</td>
-                <td>{{item.item_unit.unit_name}}</td>
-                <td>{{item.item_price}}</td>
-                <td>
-                    <button @click="OpenModal(item)">แก้ไข</button>&nbsp; 
-                    <button @click="Delete(item.item_id)">ลบ</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-    <div v-if="show" class="modal-mask" ref="newModal">
-		<div class="modal-wrapper">
-			<div class="modal-container">
-				<div class="modal-header">
-					<slot name="header"><h3>{{modal.title}}</h3></slot>
-				</div>
-				<div class="modal-body">
-					<slot name="body">
-                        <label>รหัสสินค้า</label><br>
-                        <input type="text" value="ITEM-XXXX"><br>
-                        <label>ชื่อสินค้า</label><br>
-                        <input type="text" v-model="modal.name"  autocomplete="off"><br>
-                        <label>ราคา</label><br>
-                        <input type="number" v-model="modal.price" autocomplete="off"><br>
-                        <label>หน่วย</label><br>
-                        <Dropdown v-model="modal.select" :options="unitOptions" />
-					</slot>
-				</div>
-				<div class="modal-footer">
-					<slot name="footer">
-						<button class="modal-default-button" @click="show = false">ยกเลิก</button>
-						<button class="modal-default-button" @click="Save()">บันทึก</button>
-					</slot>
-				</div>
-			</div>
-		</div>
+    <div class="row">
+        <div class="column">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th width='5%'>No.</th>
+                        <th width='15%'>รหัสสินค้า</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item, index) in item" :key="index" > 
+                        <td>{{index+1}}</td>
+                        <td @click="SlideOn(index)" :class="visibel === index ? 'active_row' : ''">{{item.item_code}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <Slide :showSlide="showSlide" @Next="Next()" @Previous="Previous()">
+                <SlideItem v-for="(item, index) in item" :key="index" :index="index" :visible="visibel">
+                    <div class="card">
+                        <div class="container">
+                        <h3>Item detail</h3>
+                        <b>รหัสสินค้า</b><br>
+                        {{item.item_code}}<br><br>
+                        <b>ชื่อสินค้า</b><br>
+                        {{item.item_name}}<br><br>
+                        <b>ราคา</b><br>
+                        {{item.item_price}}<br><br>
+                        <b>หน่วย</b><br>
+                        {{item.item_unit.unit_name}}
+                        <br>
+                        <br>
+                        <div style="text-align:center;">
+                        <button @click="OpenModal(item)">Update</button>
+                        <button @click="Delete(item.item_id)">Delete</button>
+                        </div>
+                        </div>
+                    </div>
+                </SlideItem>
+            </Slide>
+        </div>
     </div>
+    <Modal :show="showModal">
+        <template #header>
+            <h3>{{modal.title}}</h3>
+        </template>
+        <template #body>
+            <label>รหัสสินค้า</label><br>
+            <input type="text" value="ITEM-XXXX"><br>
+            <label>ชื่อสินค้า</label><br>
+            <input type="text" v-model="modal.name"  autocomplete="off"><br>
+            <label>ราคา</label><br>
+            <input type="number" v-model="modal.price" autocomplete="off"><br>
+            <label>หน่วย</label><br>
+            <Dropdown v-model="modal.select" :options="unitOptions" />
+            <br><br>
+        </template>
+        <template #footer>
+            <button class="modal-default-button" @click="showModal = false">ยกเลิก</button>
+			<button class="modal-default-button" @click="Save()">บันทึก</button>
+        </template>
+  </Modal>
 </div>
 </template>
 <script>
 import { GetAllUnit, GetAllItem, InsertItem, UpdateItem, DeleteItem } from '@/helpers/api.js'
 import Dropdown from '@/components/Dropdown.vue'
+import Modal from '@/components/Modal.vue'
+import Slide from '@/components/Slide.vue'
+import SlideItem from '@/components/SlideItem.vue'
+
 
 export default {
     components : {
         Dropdown,
+        Modal,
+        Slide,
+        SlideItem
     },
     data (){
         return {
             item : [],
             unit : [],
-            show : false,
+            showModal : false,
+            showSlide : false,
+            visibel : '',
             modal : {
                 title : '',
                 name : '',
@@ -119,7 +139,7 @@ export default {
                 this.modal.price = item.item_price
                 this.modal.id = item.item_id
             }
-            this.show = true;
+            this.showModal = true;
         },
 
 
@@ -129,7 +149,7 @@ export default {
             }else{
                 this.Update(this.modal.name, this.modal.price, this.modal.select, this.modal.id)
             }
-            this.show = false;
+            this.showModal = false;
         },
 
         async Insert(name, price, unit_id){
@@ -150,7 +170,7 @@ export default {
                     alert(result.message);
                 }else{
                     alert(result.message);
-                    this.show = false;
+                    this.showModal = false;
                 }
                 this.GetItem();
             }
@@ -174,7 +194,7 @@ export default {
                 }else{
                     this.GetItem();
                     alert(result.message);
-                    this.show = false;
+                    this.showModal = false;
                 }
             }
         },
@@ -187,8 +207,25 @@ export default {
             }else{
                 this.GetItem();
                 alert(result.message);
+                this.showSlide = false;
             }
-        }
+        },
+        Next(){
+            if(this.visibel < this.item.length -1){
+                this.visibel++;
+            }
+            console.log('next')
+        },
+        Previous(){
+            if(this.visibel > 0){
+                this.visibel--;
+            }
+            console.log('pre')
+        },
+        SlideOn(index){
+            this.visibel = index,
+            this.showSlide = true;
+        },
 
 
 
