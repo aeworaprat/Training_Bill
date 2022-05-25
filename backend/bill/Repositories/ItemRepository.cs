@@ -151,8 +151,8 @@ namespace bill.Repositories
 
         public bool CheckNameInUseDelete(ItemViewModel param)
         {
-            return (from a in dbContext.items
-                    where a.item_id != param.item_id && a.item_name == param.item_name
+            return (from a in dbContext.lists
+                    where a.list_item_id == param.item_id
                     select a).Any();
         }
 

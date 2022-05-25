@@ -30,10 +30,7 @@
             <tbody>
                 <tr v-for="(row, index) in rows" :key="index">
                     <td>{{index+1}}</td>
-                    <td @click="OpenModalItem(row, index)">
-                        {{row.product.item_code}}
-                        <!-- <Dropdown v-bind:value="row.item_id" :options="itemOptions" @input="itemChanged(this.row[index], $event)" /> -->
-                    </td>
+                    <td @click="OpenModalItem(row, index)">{{row.product.item_code}}</td>
                     <td>{{row.product.item_name}}</td>
                     <td>{{row.product.item_unit.unit_name}}</td>
                     <td><input type="number" v-model="row.qty" ></td>
@@ -48,15 +45,15 @@
         <br>
         <div style="float:right">
             <label>ยอดรวมสินค้า</label><br>
-            <input type="text" v-bind:value="productPrice" disabled><br><br> 
+            <input type="text" v-bind:value="productPrice.toFixed(2)" disabled><br><br> 
             <label>ยอดรวมส่วนลดสินค้า</label><br>
-            <input type="text" v-bind:value="productDiscount" disabled><br><br>
+            <input type="text" v-bind:value="productDiscount.toFixed(2)" disabled><br><br>
             <label>ส่วนลดท้ายบิล</label> <br>
             <input type="number" v-model="receipt_discount" ><br><br>
             <label>ราคารวมสุทธิ</label> <br>
-            <input type="text" v-bind:value="totalPrice" disabled><br><br>
+            <input type="text" v-bind:value="totalPrice.toFixed(2)" disabled><br><br>
             <button id="save" @click="Insert()">บันทึก</button>
-            <button id="save" @click="showModalView = true">ดูตัวอย่าง</button>
+            <button @click="ViewReceipt()">ดูตัวอย่าง</button>
 
         </div>
         <Modal :show="showModalItem">
@@ -64,29 +61,20 @@
             <h3>Item List</h3>
             </template>
             <template #body>
-                <Dropdown :options="itemOptions" @input="ItemModalChanged($event)" />
+                <ul v-for="(item, index) in items" :key="index">
+                    <li @click="ItemModalChanged(index)" :class="modal.selectIndex === index ? 'active_row' : ''">{{item.item_name}}</li>
+                </ul>
                 <br>
                 <hr>
-                <div>
-                    <h3>Item  Detail</h3>
-                    <b>Name</b><br>
-                    {{modal.product.item_name}}
-                    <br>
-                    <br>
-                    <b>Unit</b><br>
-                    {{modal.product.item_unit.unit_name}}
-                    <br>
-                    <br>
-                    <b>Price</b><br>
-                    {{modal.product.item_price}}
-                    <br>
-                    <br>
-                    </div>
+                <ItemDetail :item="selectedItem">
+                    <template #detail v-if="!selectedItem.item_id">
+                    <p>No Item Select</p>
+                    </template>
+                </ItemDetail>
             </template>
             <template #footer>
-            <button @click="ChooseItem()">Choose this item</button>
-            <button @click="showModalItem = false">Cancel</button>
-
+                <button @click="ChooseItem()" :disabled="!selectedItem.item_id">Choose this item</button>
+                <button @click="showModalItem = false">Cancel</button>
             </template>
         </Modal>
         <Modal :show="showModalView">
@@ -94,57 +82,10 @@
                 <h3>ข้อมูลบิล</h3>
             </template>
             <template #body>
-                <div>
-                    <label>รหัสบิล</label><br>
-                    <input type="text" value="BILL-XXXX" disabled>
-                </div>
-                <div>
-                    <label>วันที่</label><br>
-                    <input type="date" v-bind:value="date" style="width:172px;" disabled>
-                </div>
-                <br>
-                <table>
-                    <thead>
-                        <tr>
-                            <th width="5%">No.</th>
-                            <th width="15%">รหัสสินค้า</th>
-                            <th width="15%">ชื่อสินค้า</th>
-                            <th width="5%">หน่วย</th>
-                            <th width="5%">จำนวน</th>
-                            <th width="15%">ราคา</th>
-                            <th width="10%">ส่วนลด (%)</th>
-                            <th width="10%">ส่วนลด (บาท)</th>
-                            <th width="20%">รวมเงิน</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(row, index) in rows" :key="index">
-                            <td>{{index+1}}</td>
-                            <td>{{row.product.item_code}}</td>
-                            <td>{{row.product.item_name}}</td>
-                            <td>{{row.product.item_unit.unit_name}}</td>
-                            <td style="text-align:right">{{row.qty}}</td>
-                            <td style="text-align:right">{{row.product.item_price}}</td>
-                            <td>{{row.discount}}</td>
-                            <td style="text-align:right">{{getDiscountBaht(row)}}</td>
-                            <td style="text-align:right">{{getRowTotal(row)}}</td>
-                        </tr>        
-                    </tbody>
-                </table>
-                <br>
-                <div style="float:right">
-                    <label>ยอดรวมสินค้า</label><br>
-                    <input style="text-align:right" type="text" v-bind:value="productPrice" disabled><br><br> 
-                    <label>ยอดรวมส่วนลดสินค้า</label><br>
-                    <input style="text-align:right" type="text" v-bind:value="productDiscount" disabled><br><br>
-                    <label>ส่วนลดท้ายบิล</label> <br>
-                    <input style="text-align:right" type="text" v-bind:value="receipt_discount" disabled><br><br>
-                    <label>ราคารวมสุทธิ</label> <br>
-                    <input style="text-align:right" type="text" v-bind:value="totalPrice" disabled><br><br>
-                </div>
+                <ReceiptDetail :receipt="receipt" />
             </template>
             <template #footer>
-                <button @click="showModalView = false">ยกเลิก</button>
+                <button @click="showModalView=false">ยกเลิก</button>
             </template>
         </Modal>
     </div>
@@ -153,11 +94,17 @@
 import { GetAllItem, InsertReceipt } from '@/helpers/api.js'
 import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
+import ItemDetail from '@/components/ItemDetail.vue'
+import ReceiptDetail from '@/components/ReceiptDetail.vue'
+
+
 
 export default {
     components : {
         Dropdown,
-        Modal
+        Modal,
+        ItemDetail,
+        ReceiptDetail
     },
     data() {
         return {
@@ -169,11 +116,13 @@ export default {
             showModalView : false,
             modal : {
                 index : null,
+                selectIndex : null,
                 item_id : null,
                 product : {
                     item_unit : {}
                 },
-            }
+            },
+            receipt : {},
         }
     },
     computed : {
@@ -190,7 +139,7 @@ export default {
             for(let i=0;i<this.rows.length;i++){
                 sum += +this.getRowTotal(this.rows[i])
             }
-            return sum.toFixed(2)
+            return sum
 
         },
         productDiscount(){
@@ -198,7 +147,7 @@ export default {
             for(let i=0;i<this.rows.length;i++){
                 sum += +this.getDiscountBaht(this.rows[i])
             }
-            return sum.toFixed(2)
+            return sum
         },
         totalPrice(){
             let total = this.productPrice;
@@ -207,9 +156,11 @@ export default {
             if(total_price < 0){
                 return '0.00';
             }else{
-                return total_price.toFixed(2);
+                return total_price
             }
-
+        },
+        selectedItem(){
+            return this.items[this.modal.selectIndex] ?? {item_unit:{}}
         }
     },
     mounted: function () {
@@ -224,7 +175,7 @@ export default {
                     if(total < 0){
                         return '0.00';
                     }else{
-                        return total.toFixed(2);
+                        return +total.toFixed(2);
                     }
                 }else{
                     return 0;
@@ -241,7 +192,7 @@ export default {
                 if(discount_baht > total){
                     discount_baht = total;
                 }
-                return discount_baht.toFixed(2)
+                return +discount_baht.toFixed(2)
             }else{
                 return 0
             }
@@ -251,6 +202,7 @@ export default {
             row.item_id = item_id
             row.product = this.items.find(x => x.item_id === item_id)
         },
+        
         async GetItem(){
             const result = await GetAllItem();
             this.items = result;
@@ -259,7 +211,7 @@ export default {
         async Insert(){
             const list = [];
             this.rows.forEach((row, index) => {
-                if(row.item_id != ''){
+                if(row.item_id != null){
                     list.push({
                         list_item_id : this.rows[index].item_id,
                         list_quantity : +this.rows[index].qty,
@@ -270,7 +222,6 @@ export default {
                     })
                 }
             });
-
             let receipt_product_price = this.productPrice
             let receipt_product_discount = this.productDiscount
             let receipt_discount = this.receipt_discount
@@ -293,7 +244,6 @@ export default {
 
         AddRow(){
             const obj = {
-                // items : this.item,
                 item_id : null,
                 product : {
                     item_unit : {}
@@ -312,6 +262,7 @@ export default {
 
         OpenModalItem(row, index){
             this.modal.index = index
+            this.modal.selectIndex = null,
             this.modal.item_id = null,
             this.modal.product = {
                 item_unit : {}
@@ -322,22 +273,44 @@ export default {
             }
             this.showModalItem = true
         },
-        ItemModalChanged(item_id){
-            if(item_id == ''){
-                this.modal.item_id = null,
-                this.modal.product = {
-                    item_unit : {}
-                }
-            }else{
-                this.modal.item_id = item_id
-                this.modal.product = this.items.find(x => x.item_id === item_id)
-            }
+        
+        ItemModalChanged(index){
+            this.modal.item_id = this.items[index].item_id
+            this.modal.product = this.items[index]
+            this.modal.selectIndex = index
         },
+        
         ChooseItem(){
             this.rows[this.modal.index].item_id = this.modal.item_id
             this.rows[this.modal.index].product = this.modal.product
             this.showModalItem = false
         },
+
+        ViewReceipt(){
+            this.receipt = {
+                receipt_list : []
+            }
+            this.receipt.receipt_code = "BILL-XXXX"
+            this.receipt.receipt_date = this.date
+            for(let i=0;i< this.rows.length;i++){
+                if(this.rows[i].item_id != null){
+                    const obj = {
+                        list_item : this.rows[i].product,
+                        list_price : this.rows[i].product.item_price,
+                        list_quantity : this.rows[i].qty,
+                        list_discount : this.rows[i].discount,
+                        list_discount_bath : this.getDiscountBaht(this.rows[i]),
+                        list_total_price : this.getRowTotal(this.rows[i])
+                    }
+                    this.receipt.receipt_list.push(obj)
+                }
+            }
+            this.receipt.receipt_product_price = this.productPrice
+            this.receipt.receipt_product_discount =this. productDiscount
+            this.receipt.receipt_discount = this.receipt_discount
+            this.receipt.receipt_total_price = this.totalPrice
+            this.showModalView = true
+        }
     }
 }
 </script>

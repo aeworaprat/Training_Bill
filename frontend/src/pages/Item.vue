@@ -15,44 +15,31 @@
                 <tbody>
                     <tr v-for="(item, index) in item" :key="index" > 
                         <td>{{index+1}}</td>
-                        <td @click="SlideOn(index)" :class="visibel === index ? 'active_row' : ''">{{item.item_code}}</td>
+                        <td @click="SlideOn(index)" :class="selectIndex === index ? 'active_row' : ''">{{item.item_code}}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <div class="column">
             <Slide :showSlide="showSlide" @Next="Next()" @Previous="Previous()">
-                <SlideItem v-for="(item, index) in item" :key="index" :index="index" :visible="visibel">
-                    <div class="card">
-                        <div class="container">
-                        <h3>Item detail</h3>
-                        <b>รหัสสินค้า</b><br>
-                        {{item.item_code}}<br><br>
-                        <b>ชื่อสินค้า</b><br>
-                        {{item.item_name}}<br><br>
-                        <b>ราคา</b><br>
-                        {{item.item_price}}<br><br>
-                        <b>หน่วย</b><br>
-                        {{item.item_unit.unit_name}}
-                        <br>
-                        <br>
-                        <div style="text-align:center;">
-                        <button @click="OpenModal(item)">Update</button>
-                        <button @click="Delete(item.item_id)">Delete</button>
-                        </div>
-                        </div>
+                <div class="container">
+                    <ItemDetail :item="selectedItem" ></ItemDetail>
+                    <br>
+                    <div style="text-align:center;">
+                        <button @click="OpenModal(selectedItem)">Update</button>
+                        <button @click="Delete(selectedItem.item_id)">Delete</button>
                     </div>
-                </SlideItem>
+                </div>
             </Slide>
         </div>
     </div>
-    <Modal :show="showModal">
+    <Modal :show="showModal"  @Cancel="showModal = false" @Save="Save()">
         <template #header>
             <h3>{{modal.title}}</h3>
         </template>
         <template #body>
             <label>รหัสสินค้า</label><br>
-            <input type="text" value="ITEM-XXXX"><br>
+            <input type="text" value="ITEM-XXXX" disabled><br>
             <label>ชื่อสินค้า</label><br>
             <input type="text" v-model="modal.name"  autocomplete="off"><br>
             <label>ราคา</label><br>
@@ -61,11 +48,7 @@
             <Dropdown v-model="modal.select" :options="unitOptions" />
             <br><br>
         </template>
-        <template #footer>
-            <button class="modal-default-button" @click="showModal = false">ยกเลิก</button>
-			<button class="modal-default-button" @click="Save()">บันทึก</button>
-        </template>
-  </Modal>
+    </Modal>
 </div>
 </template>
 <script>
@@ -74,6 +57,8 @@ import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
 import Slide from '@/components/Slide.vue'
 import SlideItem from '@/components/SlideItem.vue'
+import ItemDetail from '@/components/ItemDetail.vue'
+
 
 
 export default {
@@ -81,7 +66,8 @@ export default {
         Dropdown,
         Modal,
         Slide,
-        SlideItem
+        SlideItem,
+        ItemDetail
     },
     data (){
         return {
@@ -89,7 +75,7 @@ export default {
             unit : [],
             showModal : false,
             showSlide : false,
-            visibel : '',
+            selectIndex : null,
             modal : {
                 title : '',
                 name : '',
@@ -107,6 +93,9 @@ export default {
                     text : x.unit_name
                 }
             })
+        },
+        selectedItem(){
+            return this.item[this.selectIndex] ?? {item_unit : {}}
         }
     },
     mounted : function() {
@@ -211,19 +200,17 @@ export default {
             }
         },
         Next(){
-            if(this.visibel < this.item.length -1){
-                this.visibel++;
+            if(this.selectIndex < this.item.length -1){
+                this.selectIndex++;
             }
-            console.log('next')
         },
         Previous(){
-            if(this.visibel > 0){
-                this.visibel--;
+            if(this.selectIndex > 0){
+                this.selectIndex--;
             }
-            console.log('pre')
         },
         SlideOn(index){
-            this.visibel = index,
+            this.selectIndex = index,
             this.showSlide = true;
         },
 

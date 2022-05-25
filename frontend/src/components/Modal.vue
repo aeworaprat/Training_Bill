@@ -15,7 +15,8 @@
             </div>
             <div class="modal-footer">
                 <slot name="footer">
-                
+                  <button @click="Save()">Save</button>
+                  <button @click="Cancel()">Cancel</button>
                 </slot>
             </div>
         </div>
@@ -26,6 +27,14 @@
 export default {
     props: {
       show: Boolean
+    },
+    methods : {
+      Save(){
+        this.$emit('Save')
+      },
+      Cancel(){
+        this.$emit('Cancel')
+      }
     }
 }
 </script>

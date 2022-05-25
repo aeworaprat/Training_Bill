@@ -15,43 +15,34 @@
         <tbody>
           <tr v-for="(unit, index) in units" :key="index" > 
             <td>{{index+1}}</td>
-            <td @click="SlideOn(index)" :class="visibel === index ? 'active_row' : ''">{{unit.unit_name}}</td>
+            <td @click="SlideOn(index)" :class="selectIndex === index ? 'active_row' : ''">{{unit.unit_name}}</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="column">
-    <Slide :showSlide="showSlide" @Next="Next()" @Previous="Previous()">
-          <SlideItem v-for="(unit, index) in units" :key="index" :index="index" :visible="visibel">
-            <div class="card">
-              <div class="container">
-                <h3>Unit detail</h3>
-                <b>ชื่อหน่วย</b><br>
-                {{unit.unit_name}}
-                <br>
-                <br>
-                <div style="text-align:center;">
-                  <button @click="OpenModal(unit)">Update</button>
-                  <button @click="Delete(unit.unit_id)">Delete</button>
-                </div>
-
-              </div>
-            </div>
-          </SlideItem>
+    <Slide  :showSlide="showSlide" @Next="Next()" @Previous="Previous()">
+      <div class="container">
+        <h3>Unit detail</h3>
+        <b>ชื่อหน่วย</b><br>
+        {{selectedUnit.unit_name}}
+        <br>
+        <br>
+        <div style="text-align:center;">
+          <button @click="OpenModal(selectedUnit)">Update</button>
+          <button @click="Delete(selectedUnit.unit_id)">Delete</button>
+        </div>
+      </div>
     </Slide>
     </div>
   </div>
-  <Modal :show="showModal">
+  <Modal :show="showModal" @Cancel="showModal = false" @Save="Save()">
     <template #header>
       <h3>{{modal.title}}</h3>
     </template>
-      <template #body>
+    <template #body>
       <label>ชื่อหน่วย</label><br>
-      <input type="text" v-model="modal.val">
-    </template>
-    <template #footer>
-        <button class="modal-default-button" @click="showModal = false">ยกเลิก</button>
-        <button class="modal-default-button" @click="Save()">บันทึก</button>
+      <input type="text" v-model="modal.val" >
     </template>
   </Modal>
 </div>
@@ -77,7 +68,7 @@ export default {
 			units : [], 
 			showModal : false,
       showSlide : false,
-      visibel : '',
+      selectIndex : null,
 			modal : { 
         title : null,
         val : null,
@@ -88,7 +79,12 @@ export default {
 	mounted: function () {
 		this.GetUnit()
 	},
-
+  computed : {
+    selectedUnit(){
+      return this.units[this.selectIndex] ?? {}
+      
+    }
+  },
   methods : {
     async GetUnit(){
       const result = await GetAllUnit();
@@ -159,19 +155,17 @@ export default {
     },
 
     Next(){
-      if(this.visibel < this.units.length -1){
-        this.visibel++;
+      if(this.selectIndex < this.units.length -1){
+        this.selectIndex++;
       }
-      console.log('next')
     },
     Previous(){
-      if(this.visibel > 0){
-        this.visibel--;
+      if(this.selectIndex > 0){
+        this.selectIndex--;
       }
-      console.log('pre')
     },
     SlideOn(index){
-      this.visibel = index,
+      this.selectIndex = index,
       this.showSlide = true;
     },
 }
@@ -213,5 +207,9 @@ td, th {
 .active_row {
   color:red
 }
-
+.container {
+    padding: 2px 16px;
+    border-style: solid;
+    border: 2px solid black
+}
 </style>
