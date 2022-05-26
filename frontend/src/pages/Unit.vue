@@ -54,8 +54,6 @@ import Modal from '@/components/Modal.vue'
 import Slide from '@/components/Slide.vue'
 import SlideItem from '@/components/SlideItem.vue'
 
-
-
 export default {
 	name: 'Unit',
   components : {

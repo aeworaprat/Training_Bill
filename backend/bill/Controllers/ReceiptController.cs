@@ -67,5 +67,30 @@ namespace bill.Controllers
                 }
             }
         }
+
+        [HttpGet]
+        public IActionResult GetReceiptFilterDate(string startDate, string endDate)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Ok(new Result { status_code = -1, message = "invalit" });
+            }
+            else
+            {
+
+                DateOnly? start = null,end = null;
+                if (startDate != null)
+                {
+                    start = DateOnly.Parse(startDate);
+                }
+                if (endDate != null)
+                {
+                    end = DateOnly.Parse(endDate);
+                }
+                List<ReceiptViewModel> list = receiptRepository.GetReceiptFilterDate(start, end);
+
+                return Ok(new Result { status_code = 1, message = "success", data = list });
+            }
+        }
     }
 }

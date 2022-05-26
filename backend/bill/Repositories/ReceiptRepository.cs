@@ -144,5 +144,20 @@ namespace bill.Repositories
                 return result;
             }
         }
+
+        public List<ReceiptViewModel> GetReceiptFilterDate(DateOnly? start, DateOnly? end)
+        {
+            List<ReceiptViewModel> receipt = (from a in dbContext.receipts
+                                              where (start == null || a.receipt_date >= start) && (end == null || a.receipt_date <= end)   
+                                              select new ReceiptViewModel
+                                              {
+                                                  receipt_id = a.receipt_id,
+                                                  receipt_code = a.receipt_code,
+                                                  receipt_date = a.receipt_date.ToString(),
+                                                  receipt_total_price = a.receipt_total_price
+                                              }).ToList();
+
+            return receipt;
+        }
     }
 }

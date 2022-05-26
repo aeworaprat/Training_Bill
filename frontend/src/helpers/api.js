@@ -114,3 +114,15 @@ export async function InsertReceipt(receipt_product_price, receipt_product_disco
     })
     return result
 }
+
+export async function GetReceiptFilterDate(start, end){
+    const result = await axios.get(end_point+`/Receipt/GetReceiptFilterDate?startDate=${start}&endDate=${end}`);
+    const data = result.data;
+    return data;
+}
+
+// export async function GetReceiptFilterDate(start ,end){
+//     const result = await axios.get(end_point+`/Receipt/GetReceiptFilterDate?startDate=${start}&endDate=${end}`);
+//     const data = result.data;
+//     return data;
+// }
