@@ -81,11 +81,11 @@ namespace bill.Controllers
                 DateOnly? start = null,end = null;
                 if (startDate != null)
                 {
-                    start = DateOnly.Parse(startDate);
+                    start = DateOnly.Parse(startDate, System.Globalization.CultureInfo.InvariantCulture);
                 }
                 if (endDate != null)
                 {
-                    end = DateOnly.Parse(endDate);
+                    end = DateOnly.Parse(endDate, System.Globalization.CultureInfo.InvariantCulture);
                 }
                 List<ReceiptViewModel> list = receiptRepository.GetReceiptFilterDate(start, end);
 

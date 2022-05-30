@@ -77,17 +77,7 @@
                 <button @click="showModalItem = false">Cancel</button>
             </template>
         </Modal>
-        <Modal :show="showModalView">
-            <template #header>
-                <h3>ข้อมูลบิล</h3>
-            </template>
-            <template #body>
-                <ReceiptDetail :receipt="receipt" />
-            </template>
-            <template #footer>
-                <button @click="showModalView=false">ยกเลิก</button>
-            </template>
-        </Modal>
+        <ReceiptDetail :receipt="receipt" :show="showModalView" @Cancel="showModalView=false"/>
     </div>
 </template>
 <script>
@@ -96,7 +86,6 @@ import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
 import ItemDetail from '@/components/ItemDetail.vue'
 import ReceiptDetail from '@/components/ReceiptDetail.vue'
-
 
 
 export default {
@@ -262,7 +251,7 @@ export default {
 
         OpenModalItem(row, index){
             this.modal.index = index
-            this.modal.selectIndex = null,
+            this.modal.selectIndex = this.items.findIndex(x => x.item_id === row.item_id),
             this.modal.item_id = null,
             this.modal.product = {
                 item_unit : {}

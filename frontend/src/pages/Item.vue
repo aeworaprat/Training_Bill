@@ -13,7 +13,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(item, index) in item" :key="index" > 
+                    <tr v-for="(item, index) in items" :key="index" > 
                         <td>{{index+1}}</td>
                         <td @click="SlideOn(index)" :class="selectIndex === index ? 'active_row' : ''">{{item.item_code}}</td>
                     </tr>
@@ -51,104 +51,140 @@
     </Modal>
 </div>
 </template>
-<script>
+<script lang="ts">
 import { GetAllUnit, GetAllItem, InsertItem, UpdateItem, DeleteItem } from '@/helpers/api.js'
+import { defineComponent, computed, ref, onMounted, reactive } from '@vue/composition-api'
 import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
 import Slide from '@/components/Slide.vue'
-import SlideItem from '@/components/SlideItem.vue'
 import ItemDetail from '@/components/ItemDetail.vue'
 
+interface IItem { 
+    item_id : number
+    item_code : string
+    item_name : string
+    item_price : number,
+    item_unit : IUnit
+}
 
+interface IUnit {
+    unit_id : number
+    unit_name : string
+}
 
-export default {
+interface IModal {
+    title : string,
+    name : string,
+    select : number,
+    price : number,
+    id : number,
+}
+
+export default defineComponent({
     components : {
         Dropdown,
         Modal,
         Slide,
-        SlideItem,
         ItemDetail
     },
-    data (){
-        return {
-            item : [],
-            unit : [],
-            showModal : false,
-            showSlide : false,
-            selectIndex : null,
-            modal : {
-                title : '',
-                name : '',
-                select : '',
-                price : '',
-                id : '',
-            },
-        }
-    },
-    computed : {
-        unitOptions(){
-            return this.unit.map(x => {
+    setup(){
+        const items = ref<IItem[]>();
+        const unit = ref<IUnit[]>();
+        const showModal = ref<boolean>(false)
+        const showSlide = ref<boolean>(false)
+        const selectIndex = ref<number>(undefined)
+        const modal: IModal = reactive({
+            title : '',
+            name : '',
+            select : undefined,
+            price : undefined,
+            id : undefined,
+        });
+        
+        onMounted(() => {
+            GetItem();
+            GetUnit();
+        })
+
+        const selectedItem = computed(() => {
+            if(selectIndex.value != undefined){
+                return items.value[selectIndex.value] ?? {item_unit : {}}
+            }else{
+                return {}
+            }
+        })
+
+        const unitOptions = computed(() =>{
+            return unit.value.map(x => {
                 return {
                     value : x.unit_id,
                     text : x.unit_name
                 }
             })
-        },
-        selectedItem(){
-            return this.item[this.selectIndex] ?? {item_unit : {}}
-        }
-    },
-    mounted : function() {
-        this.GetItem();
-        this.GetUnit();
-    },
-    methods : {
-        async GetItem(){
-            const result = await GetAllItem();
-            this.item = result;           
-        },
+        })
 
-        async GetUnit(){
+        async function GetUnit() {
             const result = await GetAllUnit();
-            this.unit = result;
-        },
+            unit.value = result;
+        }
 
-        OpenModal(item){
-            this.modal.title = ''
-            this.modal.name = ''
-            this.modal.select = ''
-            this.modal.price = ''
-            this.modal.id = ''
+        async function GetItem() {
+            const result = await GetAllItem();
+            items.value = result;         
+        }
+
+        function SlideOn(index : number){
+                selectIndex.value = index,
+                showSlide.value = true;
+        }
+
+        function Next(){
+            if(selectIndex.value < items.value.length -1){
+                selectIndex.value++;
+            }
+        }
+
+        function Previous(){
+            if(selectIndex.value > 0){
+            selectIndex.value--;
+            }
+        }
+
+        function OpenModal(item : IItem){
+            modal.title = ''
+            modal.name = ''
+            modal.select = undefined
+            modal.price = undefined
+            modal.id = undefined
             if(item === undefined || item === null){
-                this.modal.title = 'เพิ่มสินค้า'
+                modal.title = 'เพิ่มสินค้า'
             }else{
-                this.title = 'แก้ไขสินค้า'
-                this.modal.name = item.item_name
-                this.modal.select = item.item_unit.unit_id
-                this.modal.price = item.item_price
-                this.modal.id = item.item_id
+                modal.title = 'แก้ไขสินค้า'
+                modal.name = item.item_name
+                modal.select = item.item_unit.unit_id
+                modal.price = item.item_price
+                modal.id = item.item_id
             }
-            this.showModal = true;
-        },
+            showModal.value = true;
+        }
 
-
-        Save(){
-            if(this.modal.id === ''){
-                this.Insert(this.modal.name, this.modal.price, this.modal.select)
+        function Save(){
+            if(modal.id === undefined){
+                Insert(modal.name, modal.price, modal.select)
             }else{
-                this.Update(this.modal.name, this.modal.price, this.modal.select, this.modal.id)
+                Update(modal.name, modal.price, modal.select, modal.id)
             }
-            this.showModal = false;
-        },
+            showModal.value = false;
+        }
 
-        async Insert(name, price, unit_id){
+        async function Insert(name : string, price : number, unit_id : number){
             let check = 0;
 
             if(name == ''){
                 check = 1;
-            }else if(price == ''){
+            }else if(price == undefined){
                 check = 1;
-            }else if(unit_id == ''){
+            }else if(unit_id == undefined){
                 check = 1;
             }
             if(check == 1){
@@ -159,18 +195,18 @@ export default {
                     alert(result.message);
                 }else{
                     alert(result.message);
-                    this.showModal = false;
+                    showModal.value = false;
                 }
-                this.GetItem();
+                GetItem();
             }
-        },
+        }
 
-        async Update(name, price, unit_id, item_id){
-            const check = 0;
+        async function Update(name : string, price : number, unit_id : number, item_id : number){
+            let check = 0;
 
             if(name == ''){
                 check = 1;
-            }else if(price == ''){
+            }else if(price == undefined){
                 check = 1;
             }
             
@@ -181,41 +217,41 @@ export default {
                 if(result.status_code == -1){
                     alert(result.message);
                 }else{
-                    this.GetItem();
+                    GetItem();
                     alert(result.message);
-                    this.showModal = false;
+                    showModal.value = false;
                 }
             }
-        },
+        }
 
-        async Delete(id)
+        async function Delete(id : number)
         {
             const result = await DeleteItem(id)
             if(result.status_code == -1){
                 alert(result.message);
             }else{
-                this.GetItem();
+                GetItem();
                 alert(result.message);
-                this.showSlide = false;
+                showSlide.value = false;
             }
-        },
-        Next(){
-            if(this.selectIndex < this.item.length -1){
-                this.selectIndex++;
-            }
-        },
-        Previous(){
-            if(this.selectIndex > 0){
-                this.selectIndex--;
-            }
-        },
-        SlideOn(index){
-            this.selectIndex = index,
-            this.showSlide = true;
-        },
+        }
 
-
-
+        return { 
+            items,
+            unit,
+            showModal,
+            showSlide,
+            selectIndex,
+            modal,
+            selectedItem,
+            unitOptions,
+            SlideOn,
+            Next,
+            Previous,
+            OpenModal,
+            Save,
+            Delete
+        }
     }
-}
-</script>
+});
+</scriptlang=lang=>

@@ -48,48 +48,91 @@
 </div>
 </template>
 
-<script>
+<script lang="ts">
 import { GetAllUnit, InsertUnit, DeleteUnit, UpdateUnit } from '@/helpers/api.js'
+import { defineComponent, computed, ref, onMounted, reactive } from '@vue/composition-api'
 import Modal from '@/components/Modal.vue'
 import Slide from '@/components/Slide.vue'
-import SlideItem from '@/components/SlideItem.vue'
 
-export default {
+interface IUnit {
+  unit_id : number
+  unit_name : string
+}
+
+interface IModal {
+  title : string
+  val : string
+  id : number
+}
+
+export default defineComponent({
 	name: 'Unit',
   components : {
     Modal,
     Slide,
-    SlideItem
   },
-	data(){
-		return { 
-			units : [], 
-			showModal : false,
-      showSlide : false,
-      selectIndex : null,
-			modal : { 
-        title : null,
-        val : null,
-        id : null,
-      }
-		}
-	},
-	mounted: function () {
-		this.GetUnit()
-	},
-  computed : {
-    selectedUnit(){
-      return this.units[this.selectIndex] ?? {}
-      
-    }
-  },
-  methods : {
-    async GetUnit(){
-      const result = await GetAllUnit();
-      this.units = result;
-    },
+  setup(){
+    const units = ref<IUnit[]>();
+    const showSlide = ref<boolean>(false);
+    const showModal= ref<boolean>(false);
+    const selectIndex = ref<number>();
+    const modal: IModal = reactive({
+      title: "",
+      val : "",
+      id : undefined,
+    })
 
-    async Insert(name){
+    onMounted(() => {
+      GetUnit()
+    })
+    
+
+    const selectedUnit = computed(() => {
+      if(selectIndex.value != undefined){
+        return units.value[selectIndex.value] ?? {}
+      }else{
+        return {};
+      }
+    })
+    
+
+    async function GetUnit(){
+      const result = await GetAllUnit();
+      units.value =  result;
+    }
+
+    function SlideOn(index : number){
+      selectIndex.value = index,
+      showSlide.value = true;
+    }
+
+    function Next(){
+      if(selectIndex.value < units.value.length -1){
+        selectIndex.value++;
+      }
+    }
+    function Previous(){
+      if(selectIndex.value > 0){
+        selectIndex.value--;
+      }
+    }
+
+    function  OpenModal(unit : IUnit){
+      modal.title = ""
+      modal.val = ''
+      modal.id = undefined
+      if(unit === undefined || unit === null){
+        modal.title = "เพิ่มหน่วย"
+        
+      }else{
+        modal.title = "แก้ไขหน่วย"
+        modal.val = unit.unit_name
+        modal.id = unit.unit_id
+      }
+      showModal.value = true
+    }
+
+    async function Insert(name : string){
       if(name == ''){
         alert('no value');
       }else{
@@ -97,13 +140,13 @@ export default {
         if(result.status_code == -1){
         alert(result.message)
         }else{
-          this.GetUnit()
+          GetUnit()
           alert(result.message)
         }
       }	
-    },
+    }
 
-    async Update(id, name){
+    async function Update(id : number, name : string){
       if(name == ''){
         alert('no value');
       }else{
@@ -111,63 +154,49 @@ export default {
         if(result.status_code == -1){
           alert(result.message);
         }else{
-          this.GetUnit();
+          GetUnit();
           alert(result.message);
         }
       }
-    },
+    }
 
-    async Delete(id){
+    async function Delete(id : number){
       const result = await DeleteUnit(id)
       if(result.status_code == -1){
         alert(result.message)
       }else{
-        this.GetUnit()
+        GetUnit()
         alert(result.message)
-        this.showSlide = false
+        showSlide.value = false
       }
-    },
+    }
 
-    OpenModal(unit){
-      this.modal.title = ''
-      this.modal.val = ''
-      this.modal.id = ''
-      if(unit === undefined || unit === null){
-        this.modal.title = 'เพิ่มหน่วย'
-        
+    function Save(){
+      if(modal.id === undefined){
+        Insert(modal.val)
       }else{
-        this.modal.title = 'แก้ไขหน่วย'
-        this.modal.val = unit.unit_name
-        this.modal.id = unit.unit_id
+        Update(modal.id, modal.val)
       }
-      this.showModal = true
-    },
+      showModal.value = false
+    }
 
-    Save(){
-      if(this.modal.id === ''){
-        this.Insert(this.modal.val)
-      }else{
-        this.Update(this.modal.id, this.modal.val)
-      }
-      this.showModal = false
-    },
 
-    Next(){
-      if(this.selectIndex < this.units.length -1){
-        this.selectIndex++;
-      }
-    },
-    Previous(){
-      if(this.selectIndex > 0){
-        this.selectIndex--;
-      }
-    },
-    SlideOn(index){
-      this.selectIndex = index,
-      this.showSlide = true;
-    },
-}
-};
+    return { 
+      units, 
+      showSlide,
+      modal,
+      selectIndex,
+      selectedUnit,
+      showModal,
+      SlideOn,
+      OpenModal,
+      Delete,
+      Save,
+      Next,
+      Previous,
+    }
+  },
+});
 </script>
 <style >
 table {

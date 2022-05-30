@@ -23,20 +23,29 @@
         </div>
     </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from '@vue/composition-api'
+
+export default defineComponent({
     props: {
       show: Boolean
     },
-    methods : {
-      Save(){
-        this.$emit('Save')
-      },
-      Cancel(){
-        this.$emit('Cancel')
+    setup(props, {emit}){
+
+      function Save(){
+        emit('Save')
       }
-    }
-}
+
+      function Cancel(){
+        emit('Cancel')
+      }
+
+      return { 
+        Save,
+        Cancel
+      }
+    },
+})
 </script>
 <style>
 .modal-fader {

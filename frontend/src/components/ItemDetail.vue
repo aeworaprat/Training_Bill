@@ -1,8 +1,6 @@
 <template>
     <div>
-        <slot name="header">
-            <h3>Item detail</h3>
-        </slot>
+        <h3>Item detail</h3>
         <slot name="detail">
             <b>รหัสสินค้า</b><br>
             {{item.item_code}}<br><br>
@@ -15,13 +13,15 @@
         </slot>
     </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from '@vue/composition-api'
+
+export default defineComponent({
     props : {
         item : Object
     }
 
-}
+})
 </script>
 <style>
 </style>

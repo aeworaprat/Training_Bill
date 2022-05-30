@@ -32,95 +32,68 @@
                 </tr>
             </tbody>
         </table>
-        <Modal :show="showModal" >
-            <template #header>
-                <h3>ข้อมูลบิล</h3>
-            </template>
-            <template #body>
-                <ReceiptDetail :receipt="receiptDetail" />
-            </template>
-            <template #footer>
-                <button @click="showModal=false">ยกเลิก</button>
-            </template>
-        </Modal>
+        <ReceiptDetail :receipt="receiptDetail" :show="showModal" @Cancel="showModal=false"/>
     </div>
 </template>
-<script>
+<script lang="ts">
 import { GetAllReceipt, GetReceiptById, GetReceiptFilterDate } from '@/helpers/api.js'
+import { defineComponent, ref, onMounted, } from '@vue/composition-api'
 import ReceiptDetail from '@/components/ReceiptDetail.vue'
 import Modal from '@/components/Modal.vue'
 
+interface IReceipt { 
+    receipt_id : number
+    receipt_code : string
+    receipt_date : string
+    receipt_product_price : number
+    receipt_product_discount : number 
+    receipt_discount : number
+    receipt_total_price : number
+    receipt_list : object
+}
 
-export default {
+export default defineComponent({
     components : {
         ReceiptDetail,
         Modal
     },
-    data (){
-        return {
-            receipt : [],
-            receiptDetail : {},
-            startDate : "",
-            endDate : "",
-            showModal : false
-        }
-    },
+    setup(){
+        const receipt = ref<IReceipt[]>();
+        const receiptDetail = ref<IReceipt>();
+        const startDate = ref<string>();
+        const endDate = ref<string>();
+        const showModal = ref<boolean>(false);
 
-    mounted : function() {
-        this.GetReceipt();
-    },
+        onMounted(() => {
+            GetReceipt();
+        })
 
-    methods : {
-        async GetReceipt(){
+        async function GetReceipt(){
             const result = await GetAllReceipt();
-            this.receipt = result;
-        },
+            receipt.value = result;
+        }
 
-        async ViewReceipt(receipt_id){
-            this.receiptDetail = {}
+        async function ViewReceipt(receipt_id : number){
+            receiptDetail.value = undefined
             const data_receipt = await GetReceiptById(receipt_id);
-            console.log(data_receipt)
             if(data_receipt.status_code == -1){
                 alert(data_receipt.message)
             }else{
-                this.receiptDetail = data_receipt.data
+                receiptDetail.value = data_receipt.data
             }
-            this.showModal = true;
-            
-        },
+            showModal.value = true;
+        }
 
-        CloseModal(){
-            this.showModal = false;
-            this.receiptDetail = {};
-        },
-
-        async Searh(){
-            let end = ""
-            let start = ""
-            if(this.startDate != ""){
-                start = this.startDate;
-                let startYear = start.substring(0,4);
-                startYear = +startYear + 543;
-                start = startYear+start.substring(4)
-
-            }
-            if(this.endDate != ""){
-                end = this.endDate;
-                let endYear = end.substring(0,4);
-                endYear = +endYear + 543;
-                end = endYear+end.substring(4)
-            }
-            const data_receipt = await GetReceiptFilterDate(start, end)
-            if(data_receipt.status_code == -1){
-                alert(data_receipt.message)
-            }else{
-                this.receipt = data_receipt.data
-            }
-
-
+        return {
+            receipt,
+            receiptDetail,
+            startDate,
+            endDate,
+            showModal,
+            ViewReceipt
         }
     }
-}
+})
 </script>
 <style>
 

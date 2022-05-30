@@ -5,20 +5,29 @@
         <i @click="Next()" class="btn next arrow" style="float:right"></i>
     </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from '@vue/composition-api'
+
+export default defineComponent({
     props : {
         showSlide : Boolean
     },
-    methods : {
-        Next(){
-            this.$emit('Next');
-        },
-        Previous(){
-            this.$emit('Previous');
+    setup(props, {emit}){
+
+        function Next(){
+            emit('Next');
+        }
+
+        function Previous(){
+            emit('Previous');
+        }
+
+        return {
+            Previous,
+            Next
         }
     }
-}
+})
 </script>
 <style>
 .btn {

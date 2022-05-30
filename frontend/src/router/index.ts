@@ -26,15 +26,10 @@ const routes: Array<RouteConfig> = [
     component: () => import('@/pages/ReceiptView.vue')
   },
   {
-    path: '/receipt-info/:id',
-    name: 'receipt-info',
-    component: () => import('@/pages/ReceiptInfo.vue')
-  },
-  {
     path: '/receipt',
     name: 'receipt',
     component: () => import('@/pages/Receipt.vue')
-  }
+  },
 ]
 
 const router = new VueRouter({
