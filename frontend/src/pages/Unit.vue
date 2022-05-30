@@ -49,8 +49,9 @@
 </template>
 
 <script lang="ts">
-import { GetAllUnit, InsertUnit, DeleteUnit, UpdateUnit } from '@/helpers/api.js'
+
 import { defineComponent, computed, ref, onMounted, reactive } from '@vue/composition-api'
+import { GetAllUnit, InsertUnit, DeleteUnit, UpdateUnit } from '@/helpers/api'
 import Modal from '@/components/Modal.vue'
 import Slide from '@/components/Slide.vue'
 
@@ -64,6 +65,7 @@ interface IModal {
   val : string
   id : number
 }
+
 
 export default defineComponent({
 	name: 'Unit',

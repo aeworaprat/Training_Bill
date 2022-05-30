@@ -54,7 +54,6 @@
             <input type="text" v-bind:value="totalPrice.toFixed(2)" disabled><br><br>
             <button id="save" @click="Insert()">บันทึก</button>
             <button @click="ViewReceipt()">ดูตัวอย่าง</button>
-
         </div>
         <Modal :show="showModalItem">
             <template #header>
@@ -80,91 +79,148 @@
         <ReceiptDetail :receipt="receipt" :show="showModalView" @Cancel="showModalView=false"/>
     </div>
 </template>
-<script>
-import { GetAllItem, InsertReceipt } from '@/helpers/api.js'
+<script lang='ts'>
+
+import { defineComponent, computed, ref, onMounted, reactive } from '@vue/composition-api'
+import { GetAllItem, InsertReceipt } from '@/helpers/api'
 import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
 import ItemDetail from '@/components/ItemDetail.vue'
 import ReceiptDetail from '@/components/ReceiptDetail.vue'
 
+interface IREceipt {
+    receipt_code : string,
+    receipt_date : string,
+    receipt_product_price : number,
+    receipt_product_discount : number,
+    receipt_discount : number,
+    receipt_total_price : number,
+    receipt_list : IList[]
+}
 
-export default {
+interface IList {
+    list_item_id : number
+    list_quantity : number
+    list_price : number,
+    list_discount : number,
+    list_discount_bath : number,
+    list_total_price : number
+    list_item : IItem
+}
+
+interface IItem { 
+    item_id : number
+    item_code : string
+    item_name : string
+    item_price : number,
+    item_unit : IUnit
+}
+
+interface IUnit {
+    unit_id : number
+    unit_name : string
+}
+
+interface IRows {
+    item_id : number,
+    product : IItem,
+    qty : number,
+    discount : number,
+    discount_baht : number,
+    total_price : number,
+}
+
+interface IModal {
+    index : number
+    selectIndex : number
+    item_id : number
+    product : IItem
+}
+
+export default defineComponent({
     components : {
         Dropdown,
         Modal,
         ItemDetail,
         ReceiptDetail
     },
-    data() {
-        return {
-            items : [],
-            rows : [],
-            date : new Date().toISOString().slice(0,10),
-            receipt_discount : '',
-            showModalItem : false,
-            showModalView : false,
-            modal : {
-                index : null,
-                selectIndex : null,
-                item_id : null,
-                product : {
-                    item_unit : {}
-                },
-            },
-            receipt : {},
-        }
-    },
-    computed : {
-        itemOptions(){
-            return this.items.map(x => {
+    setup(){
+        const items = ref<IItem[]>();
+        const rows = ref<IRows[]>([]);
+        const date = ref<string>(new Date().toISOString().slice(0,10));
+        const receipt_discount = ref<number>(null);
+        const showModalItem = ref<boolean>();
+        const showModalView = ref<boolean>();
+        const modal: IModal = reactive({
+            index : undefined,
+            selectIndex : undefined,
+            item_id : undefined,
+            product : undefined
+        });
+        const receiptInitialState: IREceipt = reactive({
+            receipt_code : "",
+            receipt_date : "",
+            receipt_product_price : 0,
+            receipt_product_discount : 0,
+            receipt_discount : 0,
+            receipt_total_price : 0,
+            receipt_list : []
+        });
+        const receipt = receiptInitialState
+
+        onMounted(() => {
+            GetItem()
+        })
+
+        const itemOptions = computed(() => {
+            return items.value.map(x => {
                 return {
                     value : x.item_id,
                     text : x.item_code
                 }
             })
-        },
-        productPrice(){
-            let sum = 0
-            for(let i=0;i<this.rows.length;i++){
-                sum += +this.getRowTotal(this.rows[i])
-            }
-            return sum
+        })
 
-        },
-        productDiscount(){
+        const productPrice = computed(() => {
             let sum = 0
-            for(let i=0;i<this.rows.length;i++){
-                sum += +this.getDiscountBaht(this.rows[i])
+            for(let i=0;i<rows.value.length;i++){
+                sum += +getRowTotal(rows.value[i])
+            }
+            return +sum
+        })
+
+        const productDiscount = computed(() => {
+            let sum = 0
+            for(let i=0;i<rows.value.length;i++){
+                sum += +getDiscountBaht(rows.value[i])
             }
             return sum
-        },
-        totalPrice(){
-            let total = this.productPrice;
-            let last_discount = this.receipt_discount;
-            let total_price = total - last_discount;
+        })
+
+        const totalPrice = computed(() => {
+            let total = productPrice.value;
+            let last_discount = receipt_discount.value ?? 0;
+            let total_price = +total - last_discount;
             if(total_price < 0){
-                return '0.00';
+                return 0;
             }else{
                 return total_price
             }
-        },
-        selectedItem(){
-            return this.items[this.modal.selectIndex] ?? {item_unit:{}}
-        }
-    },
-    mounted: function () {
-        this.GetItem()
-    },
-    methods : {
-        getRowTotal(row){
-            let discount = this.getDiscountBaht(row)
-            if(!isNaN(row.product.item_price )){
+        })
+
+        const selectedItem = computed(() => {
+            return items.value[modal.selectIndex] ?? {item_unit:{}}
+        })
+
+        function getRowTotal(row : IRows){
+            let discount = getDiscountBaht(row)
+            if(row.product.item_price != undefined){
                 let total = (+row.qty * +row.product.item_price) - +discount;
                 if (!isNaN(total)) {
                     if(total < 0){
-                        return '0.00';
+                        return 0;
                     }else{
-                        return +total.toFixed(2);
+                        return +total;
                     }
                 }else{
                     return 0;
@@ -172,9 +228,9 @@ export default {
             }else{
                 return 0;
             }
-        },
+        }
 
-        getDiscountBaht(row){
+        function getDiscountBaht(row : IRows){
             if(!isNaN(row.product.item_price)){
                 let total = (+row.qty * +row.product.item_price)
                 let discount_baht = (total * +row.discount)/100
@@ -185,43 +241,88 @@ export default {
             }else{
                 return 0
             }
-        },
+        }
 
-        itemChanged(row, item_id){
-            row.item_id = item_id
-            row.product = this.items.find(x => x.item_id === item_id)
-        },
-        
-        async GetItem(){
+        async function GetItem(){
             const result = await GetAllItem();
-            this.items = result;
-        },
+            items.value = result;
+        }
 
-        async Insert(){
-            const list = [];
-            this.rows.forEach((row, index) => {
-                if(row.item_id != null){
-                    list.push({
-                        list_item_id : this.rows[index].item_id,
-                        list_quantity : +this.rows[index].qty,
-                        list_price : +this.rows[index].product.item_price,
-                        list_discount : +this.rows[index].discount,
-                        list_discount_bath : +this.getDiscountBaht(this.rows[index]),
-                        list_total_price : +this.getRowTotal(this.rows[index])
-                    })
-                }
-            });
-            let receipt_product_price = this.productPrice
-            let receipt_product_discount = this.productDiscount
-            let receipt_discount = this.receipt_discount
-            let receipt_total_price = this.totalPrice
-            if(receipt_discount == ''){
-                receipt_discount = 0;
+        function AddRow(){
+            const obj : IRows = {
+                item_id : undefined,
+                product : {
+                    item_id: undefined,
+                    item_code: "",
+                    item_name: "",
+                    item_price: null,
+                    item_unit: {
+                        unit_id: undefined,
+                        unit_name: "",
+                    }
+                },
+                qty : null,
+                discount : null,
+                discount_baht : null,
+                total_price : null,
             }
-            if(list.length == 0){
+            rows.value.push(obj)
+        }
+
+        function OpenModalItem(row : IRows, index : number){
+            modal.index = index
+            modal.selectIndex = items.value.findIndex(x => x.item_id === row.item_id),
+            modal.item_id = undefined,
+            modal.product = undefined
+            if(row.item_id != undefined){
+                modal.item_id = row.item_id
+                modal.product = row.product
+            }
+            showModalItem.value = true
+        }
+
+        function RemoveRow(index : number){
+            rows.value.splice(index, 1);
+        }
+
+        function ItemModalChanged(index : number){
+            modal.item_id = items.value[index].item_id
+            modal.product = items.value[index]
+            modal.selectIndex = index
+        }
+
+        function ChooseItem(){
+            rows.value[modal.index].item_id = modal.item_id
+            rows.value[modal.index].product = modal.product
+            showModalItem.value = false
+        }
+
+        async function Insert(){
+            receipt.receipt_list = [];
+            receipt.receipt_code = "BILL-XXXX";
+            receipt.receipt_date = date.value
+            for(let i=0;i< rows.value.length;i++){
+                if(rows.value[i].item_id != null){
+                    const obj : IList = reactive({
+                        list_item_id : +rows.value[i].item_id,
+                        list_item : rows.value[i].product,
+                        list_price : +rows.value[i].product.item_price,
+                        list_quantity : +rows.value[i].qty,
+                        list_discount : +rows.value[i].discount,
+                        list_discount_bath : +getDiscountBaht(rows.value[i]),
+                        list_total_price : +getRowTotal(rows.value[i])
+                    })
+                    receipt.receipt_list.push(obj)
+                }
+            }
+            receipt.receipt_product_price = +productPrice.value
+            receipt.receipt_product_discount = +productDiscount.value
+            receipt.receipt_discount = +receipt_discount.value
+            receipt.receipt_total_price = +totalPrice.value
+            if(receipt.receipt_list.length == 0){
                 alert('no select')
             }else{
-                const result = await InsertReceipt(+receipt_product_price, +receipt_product_discount, +receipt_discount, +receipt_total_price, list)
+                const result = await InsertReceipt(+receipt.receipt_product_price, +receipt.receipt_product_discount, +receipt.receipt_discount, +receipt.receipt_total_price, receipt.receipt_list)
                 if(result.status_code == -1){
                     alert(result.message);
                 }else{
@@ -229,77 +330,57 @@ export default {
                     location.reload();
                 }
             }
-        },
+        }
 
-        AddRow(){
-            const obj = {
-                item_id : null,
-                product : {
-                    item_unit : {}
-                },
-                qty : '',
-                discount : '',
-                discount_baht : 0,
-                total_price : 0,
-            }
-            this.rows.push(obj)
-        },
-
-        RemoveRow(index){
-            this.rows.splice(index, 1);
-        },
-
-        OpenModalItem(row, index){
-            this.modal.index = index
-            this.modal.selectIndex = this.items.findIndex(x => x.item_id === row.item_id),
-            this.modal.item_id = null,
-            this.modal.product = {
-                item_unit : {}
-            }
-            if(row.item_id != null){
-                this.modal.item_id = row.item_id
-                this.modal.product = row.product
-            }
-            this.showModalItem = true
-        },
-        
-        ItemModalChanged(index){
-            this.modal.item_id = this.items[index].item_id
-            this.modal.product = this.items[index]
-            this.modal.selectIndex = index
-        },
-        
-        ChooseItem(){
-            this.rows[this.modal.index].item_id = this.modal.item_id
-            this.rows[this.modal.index].product = this.modal.product
-            this.showModalItem = false
-        },
-
-        ViewReceipt(){
-            this.receipt = {
-                receipt_list : []
-            }
-            this.receipt.receipt_code = "BILL-XXXX"
-            this.receipt.receipt_date = this.date
-            for(let i=0;i< this.rows.length;i++){
-                if(this.rows[i].item_id != null){
-                    const obj = {
-                        list_item : this.rows[i].product,
-                        list_price : this.rows[i].product.item_price,
-                        list_quantity : this.rows[i].qty,
-                        list_discount : this.rows[i].discount,
-                        list_discount_bath : this.getDiscountBaht(this.rows[i]),
-                        list_total_price : this.getRowTotal(this.rows[i])
-                    }
-                    this.receipt.receipt_list.push(obj)
+        function ViewReceipt(){
+            receipt.receipt_list = [];
+            receipt.receipt_code = "BILL-XXXX";
+            receipt.receipt_date = date.value
+            for(let i=0;i< rows.value.length;i++){
+                if(rows.value[i].item_id != null){
+                    const obj : IList = reactive({
+                        list_item_id : rows.value[i].item_id,
+                        list_item : rows.value[i].product,
+                        list_price : rows.value[i].product.item_price,
+                        list_quantity : rows.value[i].qty,
+                        list_discount : rows.value[i].discount,
+                        list_discount_bath : getDiscountBaht(rows.value[i]),
+                        list_total_price : getRowTotal(rows.value[i])
+                    })
+                    receipt.receipt_list.push(obj)
                 }
             }
-            this.receipt.receipt_product_price = this.productPrice
-            this.receipt.receipt_product_discount =this. productDiscount
-            this.receipt.receipt_discount = this.receipt_discount
-            this.receipt.receipt_total_price = this.totalPrice
-            this.showModalView = true
+            receipt.receipt_product_price = +productPrice.value
+            receipt.receipt_product_discount = +productDiscount.value
+            receipt.receipt_discount = +receipt_discount.value
+            receipt.receipt_total_price = +totalPrice.value
+            showModalView.value = true
+        }
+
+        return {
+            items,
+            date,
+            rows,
+            receipt_discount,
+            showModalItem,
+            showModalView,
+            modal,
+            productPrice,
+            productDiscount,
+            totalPrice,
+            selectedItem,
+            itemOptions,
+            receipt,
+            AddRow,
+            OpenModalItem,
+            getDiscountBaht,
+            getRowTotal,
+            RemoveRow,
+            ItemModalChanged,
+            ChooseItem,
+            ViewReceipt,
+            Insert
         }
     }
-}
+})
 </script>

@@ -49,10 +49,11 @@
             <br><br>
         </template>
     </Modal>
-</div>
+</div> 
 </template>
 <script lang="ts">
-import { GetAllUnit, GetAllItem, InsertItem, UpdateItem, DeleteItem } from '@/helpers/api.js'
+// import { GetAllUnit } from '@/helpers/foo';
+import { GetAllUnit,  GetAllItem, InsertItem, UpdateItem, DeleteItem } from '@/helpers/api'
 import { defineComponent, computed, ref, onMounted, reactive } from '@vue/composition-api'
 import Dropdown from '@/components/Dropdown.vue'
 import Modal from '@/components/Modal.vue'
@@ -254,4 +255,4 @@ export default defineComponent({
         }
     }
 });
-</scriptlang=lang=>
+</script>

@@ -36,7 +36,8 @@
     </div>
 </template>
 <script lang="ts">
-import { GetAllReceipt, GetReceiptById, GetReceiptFilterDate } from '@/helpers/api.js'
+
+import { GetAllReceipt, GetReceiptById, GetReceiptFilterDate } from '@/helpers/api'
 import { defineComponent, ref, onMounted, } from '@vue/composition-api'
 import ReceiptDetail from '@/components/ReceiptDetail.vue'
 import Modal from '@/components/Modal.vue'
@@ -60,8 +61,8 @@ export default defineComponent({
     setup(){
         const receipt = ref<IReceipt[]>();
         const receiptDetail = ref<IReceipt>();
-        const startDate = ref<string>();
-        const endDate = ref<string>();
+        const startDate = ref<string>("");
+        const endDate = ref<string>("");
         const showModal = ref<boolean>(false);
 
         onMounted(() => {
@@ -84,17 +85,24 @@ export default defineComponent({
             showModal.value = true;
         }
 
+        async function Searh() {    
+            const data_receipt = await GetReceiptFilterDate(startDate.value, endDate.value);
+            if(data_receipt.status_code == -1){
+                alert(data_receipt.message)
+            }else{
+                receipt.value = data_receipt.data
+            }
+        }
+
         return {
             receipt,
             receiptDetail,
             startDate,
             endDate,
             showModal,
-            ViewReceipt
+            ViewReceipt,
+            Searh
         }
     }
 })
 </script>
-<style>
-
-</style>

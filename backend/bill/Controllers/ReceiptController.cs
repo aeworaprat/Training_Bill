@@ -77,7 +77,6 @@ namespace bill.Controllers
             }
             else
             {
-
                 DateOnly? start = null,end = null;
                 if (startDate != null)
                 {

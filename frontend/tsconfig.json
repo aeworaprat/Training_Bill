@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
+    // "noImplicitAny": false,
     "strict": true,
     "strictNullChecks": false,
     "jsx": "preserve",
@@ -33,9 +34,10 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "tests/**/*.tsx",
+    "@/helpers/api.js"
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
 }
